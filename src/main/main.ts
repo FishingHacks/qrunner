@@ -204,7 +204,7 @@ ipcMain.handle('get-script', async (ev, name: string) => getScript(name));
 ipcMain.handle('open-script-directory', () => shell.openPath(SCRIPTDIR));
 export let uiChangeCb: (() => void)[] = [];
 export async function arg(name: string, options?: (string | ArgOption)[]) {
-  show();
+  await show();
   for (const cb of uiChangeCb)
     try {
       cb();
@@ -239,7 +239,7 @@ export function hide() {
     mainWindow?.hide();
   } catch {}
 }
-export function show() {
+export async function show() {
   if (!mainWindow) createWindow();
 
   try {
@@ -248,6 +248,11 @@ export function show() {
     createWindow();
     mainWindow?.show();
   }
+
+  if (mainWindow?.webContents.isLoadingMainFrame())
+    await new Promise((r) =>
+      mainWindow?.webContents.once('did-finish-load', r)
+    );
 }
 ipcMain.handle('arg', (ev, name: string, options?: (string | ArgOption)[]) => {
   return arg(name, options);
@@ -670,31 +675,72 @@ app.on('activate', () => {
   }
 });
 
-const server = createServer((req, res) => {
-  if (req.method !== 'POST' || req.url !== '/') return res.end();
-  if (req.headers['content-type'] !== 'application/json') return res.end();
-  let body = '';
-  req.on('data', (chunk) => (body += chunk));
-  req.on('end', () => {
-    try {
-      const json = JSON.parse(body);
-      if (
-        !json.script ||
-        !json.args ||
-        typeof json.script !== 'string' ||
-        !(json.args instanceof Array) ||
-        json.args.map((el: any) => typeof el === 'string').includes(false)
-      )
-        throw new Error();
+const server = createServer(async (req, res) => {
+  if (req.method === 'POST' && req.url === '/') {
+    if (req.headers['content-type'] !== 'application/json') return res.end();
+    let body = '';
+    req.on('data', (chunk) => (body += chunk));
+    req.on('end', () => {
+      try {
+        const json = JSON.parse(body);
+        if (
+          !json.script ||
+          !json.args ||
+          typeof json.script !== 'string' ||
+          !(json.args instanceof Array) ||
+          json.args.map((el: any) => typeof el === 'string').includes(false)
+        )
+          throw new Error();
 
-      runScript(json.script, ...json.args);
-      res.write('Launched script!');
-      res.end();
-    } catch {
-      res.write('Malformed json');
-      res.end();
-    }
-  });
+        runScript(json.script, ...json.args);
+        res.write('Launched script!');
+        res.end();
+      } catch {
+        res.write('Malformed json');
+        res.end();
+      }
+    });
+  } else if (
+    req.method === 'GET' &&
+    req.url?.startsWith('/add-script?script=')
+  ) {
+    const script = new URL('http://localhost' + req.url).searchParams.get(
+      'script'
+    );
+    if (!script) return res.end();
+    if (!script.startsWith('https://gist.github.com/') && script.includes('/'))
+      return res.end();
+    const id = script.split('/').pop();
+    if (!id) return res.end();
+    const file = await fetch('https://api.github.com/gists/' + encodeURIComponent(id))
+      .then((res) => res.json())
+      .then((json) => Object.values(json?.files || {})[0] as any);
+    if (!file || !file.filename || !file.content) return res.end();
+    try {
+      const val = await arg(
+        'Are you sure you want to import the script ' +
+          file.filename.toString() +
+          '?',
+        [
+          {
+            key: 'yes',
+            name: 'Yes',
+            description: 'This will create a new script with the file contents',
+          },
+          {
+            key: 'no',
+            name: 'No',
+            description: "This won't create the script",
+          },
+        ]
+      );
+      console.log(val);
+      if (val === 'no') return res.end();
+      createFromFile(file.filename, file.content);
+    } catch {}
+
+    res.end();
+  }
 });
 
 server.listen(1205);

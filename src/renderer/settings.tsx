@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { API } from './api';
 import { DefaultViewProps, loader } from './App';
 import { colors, ColorScheme, colorSchemes } from './constants';
+import { chevronDown, chevronUp } from './icons';
 import { KbdList } from './kbd';
 import { srgbaToHex, useAsyncState } from './utils';
 
@@ -737,6 +738,7 @@ export default function Settings(props: DefaultViewProps) {
   props.config.disableTabs = false;
   props.config.disableSearch = true;
   const { state: font, setState: setFont } = useAsyncState(API.getFont);
+  const [colorsExpanded, setColorsExpanded] = useState(false);
 
   const {
     state: config,
@@ -863,9 +865,9 @@ export default function Settings(props: DefaultViewProps) {
           }}
           value={editor || 'code'}
         >
-            <option value="code">Visual Studio Code</option>
-            <option value="emacs">Emacs</option>
-            <option value="subl">Sublime</option>
+          <option value="code">Visual Studio Code</option>
+          <option value="emacs">Emacs</option>
+          <option value="subl">Sublime</option>
         </select>
       </div>
       {config === 'loading' ? (
@@ -1033,64 +1035,74 @@ export default function Settings(props: DefaultViewProps) {
                 gap: 20,
               }}
             >
-              <h3 style={{ marginBottom: -5, marginTop: 20 }}>
-                TailwindCSS Colors
-              </h3>
-              {Object.keys(tailwindCssColors).map((k) => (
+              <div
+                className="flex"
+                style={{ cursor: 'pointer', marginTop: 20, width: 'fit-content' }}
+                onClick={() => setColorsExpanded((e) => !e)}
+              >
+                <h3 style={{ margin: 0, marginRight: 10 }}>TailwindCSS Colors</h3>
                 <div
-                  key={k}
-                  style={{
-                    display: 'flex',
-                    gap: 20,
-                    alignItems: 'center',
+                  dangerouslySetInnerHTML={{
+                    __html: colorsExpanded ? chevronUp : chevronDown,
                   }}
-                >
-                  <p style={{ width: '3vw' }}>
-                    <b>
-                      {k[0].toUpperCase()}
-                      {k.substring(1)}
-                    </b>
-                  </p>
-                  {Object.keys(tailwindCssColors[k]).map((val) => (
-                    <div
-                      key={k + '-' + val}
-                      style={{
-                        textAlign: 'center',
-                        cursor: 'pointer',
-                      }}
-                      onClick={() => {
-                        navigator.clipboard.writeText(
-                          tailwindCssColors[k][val as any as number]
-                        );
-                        setSaved(true);
-                        clearTimeout($tid);
-                        $tid = setTimeout(
-                          () => setSaved(false),
-                          1000
-                        ) as any as number;
-                      }}
-                      className="tooltip"
-                      data-tooltip={
-                        tailwindCssColors[k][val as any as number] +
-                        ' | Click to copy'
-                      }
-                    >
+                />
+              </div>
+              {colorsExpanded &&
+                Object.keys(tailwindCssColors).map((k) => (
+                  <div
+                    key={k}
+                    style={{
+                      display: 'flex',
+                      gap: 20,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <p style={{ width: '3vw' }}>
+                      <b>
+                        {k[0].toUpperCase()}
+                        {k.substring(1)}
+                      </b>
+                    </p>
+                    {Object.keys(tailwindCssColors[k]).map((val) => (
                       <div
+                        key={k + '-' + val}
                         style={{
-                          backgroundColor:
-                            tailwindCssColors[k][val as any as number],
-                          width: '2.5rem',
-                          height: '1.75rem',
-                          borderRadius: 3,
-                          marginBottom: 7,
-                          border: '1px var(--color-text) solid',
+                          textAlign: 'center',
+                          cursor: 'pointer',
                         }}
-                      />
-                      <div>{val}</div>
-                    </div>
-                  ))}
-                </div>
-              ))}
+                        onClick={() => {
+                          navigator.clipboard.writeText(
+                            tailwindCssColors[k][val as any as number]
+                          );
+                          setSaved(true);
+                          clearTimeout($tid);
+                          $tid = setTimeout(
+                            () => setSaved(false),
+                            1000
+                          ) as any as number;
+                        }}
+                        className="tooltip"
+                        data-tooltip={
+                          tailwindCssColors[k][val as any as number] +
+                          ' | Click to copy'
+                        }
+                      >
+                        <div
+                          style={{
+                            backgroundColor:
+                              tailwindCssColors[k][val as any as number],
+                            width: '2.5rem',
+                            height: '1.75rem',
+                            borderRadius: 3,
+                            marginBottom: 7,
+                            border: '1px var(--color-text) solid',
+                          }}
+                        />
+                        <div>{val}</div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
             </div>
           </div>
           <div

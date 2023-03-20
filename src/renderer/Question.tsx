@@ -144,11 +144,11 @@ export default function Question(
                       width: '2.5rem',
                       height: '1.75rem',
                       borderRadius: 3,
-                      backgroundImage: 'url(' + el.image + ')',
-                      backgroundPosition: 'center',
-                      backgroundRepeat: 'no-repeat',
-                      backgroundSize: 'contain',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
+                    dangerouslySetInnerHTML={{ __html: el.image }}
                   />
                 )}
                 <div>

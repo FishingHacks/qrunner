@@ -6,6 +6,7 @@ import CodeHighlight from './highlight';
 import ScrollArea from './scrollarea';
 import Username from './username';
 import { useAsyncState } from './utils';
+import * as icons from './icons';
 
 function runScript(name: string) {
   if (loaderIsRunning) return;
@@ -118,8 +119,7 @@ export default function ScriptSearch(props: DefaultViewProps) {
         name: 'Copy Binary Path',
         description:
           'You can use this to run the script from the command line or other programs that can run binary files, such as a Streamdeck',
-        image:
-          'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGNsYXNzPSJpY29uIGljb24tdGFibGVyIGljb24tdGFibGVyLWNsaXBib2FyZC1jb3B5IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlLXdpZHRoPSIxLjI1IiBzdHJva2U9IiNmZmYiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgIDxwYXRoIHN0cm9rZT0ibm9uZSIgZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSI+PC9wYXRoPgogICA8cGF0aCBkPSJNOSA1aC0yYTIgMiAwIDAgMCAtMiAydjEyYTIgMiAwIDAgMCAyIDJoM205IC05di01YTIgMiAwIDAgMCAtMiAtMmgtMiI+PC9wYXRoPgogICA8cGF0aCBkPSJNMTMgMTd2LTFhMSAxIDAgMCAxIDEgLTFoMW0zIDBoMWExIDEgMCAwIDEgMSAxdjFtMCAzdjFhMSAxIDAgMCAxIC0xIDFoLTFtLTMgMGgtMWExIDEgMCAwIDEgLTEgLTF2LTEiPjwvcGF0aD4KICAgPHBhdGggZD0iTTkgM20wIDJhMiAyIDAgMCAxIDIgLTJoMmEyIDIgMCAwIDEgMiAydjBhMiAyIDAgMCAxIC0yIDJoLTJhMiAyIDAgMCAxIC0yIC0yeiI+PC9wYXRoPgo8L3N2Zz4=',
+        image: icons.clipboard,
       },
       {
         key: 'delete-file',
@@ -128,23 +128,20 @@ export default function ScriptSearch(props: DefaultViewProps) {
           'Delete "' +
           filteredFiles[selected].name +
           '". You won\'t be able to recover it.',
-        image:
-          'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGNsYXNzPSJpY29uIGljb24tdGFibGVyIGljb24tdGFibGVyLXRyYXNoIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlLXdpZHRoPSIxLjI1IiBzdHJva2U9IiNmZmYiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgIDxwYXRoIHN0cm9rZT0ibm9uZSIgZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSI+PC9wYXRoPgogICA8cGF0aCBkPSJNNCA3bDE2IDAiPjwvcGF0aD4KICAgPHBhdGggZD0iTTEwIDExbDAgNiI+PC9wYXRoPgogICA8cGF0aCBkPSJNMTQgMTFsMCA2Ij48L3BhdGg+CiAgIDxwYXRoIGQ9Ik01IDdsMSAxMmEyIDIgMCAwIDAgMiAyaDhhMiAyIDAgMCAwIDIgLTJsMSAtMTIiPjwvcGF0aD4KICAgPHBhdGggZD0iTTkgN3YtM2ExIDEgMCAwIDEgMSAtMWg0YTEgMSAwIDAgMSAxIDF2MyI+PC9wYXRoPgo8L3N2Zz4=',
+        image: icons.trash,
       },
       {
         key: 'rename',
         name: 'Rename',
         description: 'Rename "' + filteredFiles[selected].name + '"',
-        image:
-          'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGNsYXNzPSJpY29uIGljb24tdGFibGVyIGljb24tdGFibGVyLWVkaXQiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBzdHJva2Utd2lkdGg9IjEuMjUiIHN0cm9rZT0iI2ZmZiIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICAgPHBhdGggc3Ryb2tlPSJub25lIiBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIj48L3BhdGg+CiAgIDxwYXRoIGQ9Ik03IDdoLTFhMiAyIDAgMCAwIC0yIDJ2OWEyIDIgMCAwIDAgMiAyaDlhMiAyIDAgMCAwIDIgLTJ2LTEiPjwvcGF0aD4KICAgPHBhdGggZD0iTTIwLjM4NSA2LjU4NWEyLjEgMi4xIDAgMCAwIC0yLjk3IC0yLjk3bC04LjQxNSA4LjM4NXYzaDNsOC4zODUgLTguNDE1eiI+PC9wYXRoPgogICA8cGF0aCBkPSJNMTYgNWwzIDMiPjwvcGF0aD4KPC9zdmc+',
+        image: icons.pen,
       },
       {
         key: 'publish',
         name: 'Publish to a github gist',
         description:
           'Publish "' + filteredFiles[selected].name + '" to a github gist',
-        image:
-          'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZT0iI2ZmZiIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBzdHJva2U9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiIGZpbGw9Im5vbmUiPjwvcGF0aD48cGF0aCBkPSJNOSAxOWMtNC4zIDEuNCAtNC4zIC0yLjUgLTYgLTNtMTIgNXYtMy41YzAgLTEgLjEgLTEuNCAtLjUgLTJjMi44IC0uMyA1LjUgLTEuNCA1LjUgLTZhNC42IDQuNiAwIDAgMCAtMS4zIC0zLjJhNC4yIDQuMiAwIDAgMCAtLjEgLTMuMnMtMS4xIC0uMyAtMy41IDEuM2ExMi4zIDEyLjMgMCAwIDAgLTYuMiAwYy0yLjQgLTEuNiAtMy41IC0xLjMgLTMuNSAtMS4zYTQuMiA0LjIgMCAwIDAgLS4xIDMuMmE0LjYgNC42IDAgMCAwIC0xLjMgMy4yYzAgNC42IDIuNyA1LjcgNS41IDZjLS42IC42IC0uNiAxLjIgLS41IDJ2My41Ij48L3BhdGg+PC9zdmc+',
+        image: icons.github,
       },
     ]).catch(() => {});
     if (opt === 'copy-bin-path') {
@@ -408,11 +405,19 @@ export default function ScriptSearch(props: DefaultViewProps) {
                   d="M27.49 22H14.227v3.264h4.757V40h3.769V25.264h4.737zM39.194 26.084s-1.787-1.192-3.807-1.192-2.747.96-2.747 1.986c0 2.648 7.381 2.383 7.381 7.712 0 8.209-11.254 4.568-11.254 4.568V35.22s2.152 1.622 4.733 1.622 2.483-1.688 2.483-1.92c0-2.449-7.315-2.449-7.315-7.878 0-7.381 10.658-4.469 10.658-4.469l-.132 3.509z"
                 ></path>
               </svg>
-              <a href={'file:///~/.qrunner/scripts/' + filteredFiles[selected].path} className='link' onDragStart={(ev) => {
-                ev.preventDefault();
-                API.startDrag('~/.qrunner/scripts/' + filteredFiles[selected].path)
-              }}>
-              {filteredFiles[selected].path}
+              <a
+                href={
+                  'file:///~/.qrunner/scripts/' + filteredFiles[selected].path
+                }
+                className="link"
+                onDragStart={(ev) => {
+                  ev.preventDefault();
+                  API.startDrag(
+                    '~/.qrunner/scripts/' + filteredFiles[selected].path
+                  );
+                }}
+              >
+                {filteredFiles[selected].path}
               </a>
             </div>
             <CodeHighlight code={scriptContents} />
