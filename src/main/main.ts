@@ -1,9 +1,8 @@
 /* eslint global-require: off, no-console: off, promise/always-return: off */
 
 import path from 'path';
-import log from 'electron-log';
 import { resolveHtmlPath } from './util';
-
+import chalk from 'chalk';
 import { spawn, spawnSync } from 'child_process';
 import {
   app,
@@ -12,11 +11,20 @@ import {
   globalShortcut,
   ipcMain,
   Menu,
+  nativeImage,
   shell,
   Tray,
 } from 'electron';
 import { constants, existsSync, mkdirSync, watch, writeFileSync } from 'fs';
-import { access, chmod, readdir, readFile, rm, writeFile } from 'fs/promises';
+import {
+  access,
+  appendFile,
+  chmod,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from 'fs/promises';
 import { homedir } from 'os';
 import { join } from 'path';
 import { ArgOption, DropFile } from '../renderer/api';
@@ -24,35 +32,66 @@ import { ArgOption, DropFile } from '../renderer/api';
 // RESOUCES
 import globalsDTS from './resources/globals.d.ts';
 import globalsJS from './resources/globals.js';
+import runFile from './resources/run';
 import { colorsDefault } from '../renderer/constants';
 import menu from './menu';
 import tsconfig from './resources/tsconfig.json';
 import {
   changeColorscheme,
   createColorscheme,
+  createFromFile,
   createScript,
   deleteColorscheme,
   dropFile,
+  editScript,
+  event,
   getArgPreview,
   getColorschemes,
+  getConfig,
   getInstalledPackages,
   getProcs,
   getScript,
+  installPackage,
   kill,
   listScripts,
   removeScript,
   renameScript,
   runScript,
+  setConfig,
   setSelectedTab,
   uninstallPackage,
 } from './ipc';
 import installRequiredPackages from './installTypescript';
 import { randomUUID } from 'crypto';
+import { createServer } from 'http';
+import { format } from 'util';
+
+if (process.defaultApp) {
+  if (process.argv.length >= 2)
+    app.setAsDefaultProtocolClient('qrunner', process.execPath, [
+      path.resolve(process.argv[1]),
+    ]);
+} else app.setAsDefaultProtocolClient('qrunner');
+
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) app.quit();
+else {
+  app.on('second-instance', (ev, cmdLine, cwd) => {
+    console.log('qrunner', cmdLine);
+  });
+
+  app.on('open-url', (ev, url) => {
+    console.log('qrunner', url);
+  });
+}
 
 function ensureDir(path: string) {
+  log('info', 'startup', 'Ensuring that dir:' + path + ' exists!');
   if (!existsSync(path)) mkdirSync(path, { recursive: true });
 }
 function ensureFile(path: string, contents: string) {
+  log('info', 'startup', 'Ensuring that file:' + path + ' exists!');
   if (!existsSync(path)) writeFileSync(path, contents);
 }
 
@@ -66,7 +105,25 @@ function ensureFile(path: string, contents: string) {
  * 6. copy the path of cli.js in the now created dist folder
  * 7. Pase it here
  */
-const PATCHED_TSX_PATH = ''; // note: put your own path here.
+const PATCHED_TSX_PATH = '~/js/tsx/dist/cli.js'; // note: put your own path here.
+
+let messages: string[] = [];
+
+export function log(
+  level: 'warn' | 'debug' | 'info' | 'error',
+  module: string,
+  message: string,
+  ...args: any[]
+) {
+  const toPrint = chalk.cyan(module) + ' | ' + format(message, ...args);
+  console[level](toPrint);
+  messages.push(
+    `[${new Date().toLocaleString()}] [${level}]: ${module} | ${format(
+      message,
+      ...args
+    )}`
+  );
+}
 
 export const runner = (() => {
   // if (!spawnSync('tsx', ['-v']).error) return 'tsx'; // error: TSX doesn't work with IPC connections, see https://github.com/esbuild-kit/tsx/issues/201
@@ -89,9 +146,10 @@ export const colorSchemeFile = join(QRunnerDirectory, '.colorScheme.json');
 export const colorSchemeDir = join(QRunnerDirectory, 'colorSchemes');
 export const envFile = join(QRunnerDirectory, 'env.json');
 export const logDir = join(QRunnerDirectory, 'log');
-export const ifcFile = join(QRunnerDirectory, '.ifc');
 export const binDir = join(QRunnerDirectory, 'bin');
 export const fontFile = join(QRunnerDirectory, 'font');
+export const configFile = join(QRunnerDirectory, '.config.json');
+export const logFile = join(logDir, 'console.log');
 
 ensureFile(colorSchemeFile, JSON.stringify(colorsDefault));
 ensureDir(SCRIPTDIR);
@@ -101,15 +159,37 @@ ensureFile(join(SCRIPTDIR, 'globals.js'), globalsJS);
 ensureFile(join(SCRIPTDIR, 'tsconfig.json'), tsconfig);
 ensureFile(envFile, '{}');
 ensureFile(fontFile, 'ubuntu');
+ensureFile(configFile, '{}');
 ensureDir(logDir);
+ensureFile(logFile, '');
+const runnerFile = join(QRunnerDirectory, 'run');
+ensureFile(runnerFile, runFile);
+chmod(
+  runnerFile,
+  constants.S_IXUSR |
+    constants.S_IWUSR |
+    constants.S_IRUSR |
+    constants.S_IRGRP |
+    constants.S_IWGRP |
+    constants.S_IROTH
+);
 installRequiredPackages(SCRIPTDIR, [
   'typescript',
   'highlight.js',
   'marked',
   '@types/node',
 ]);
-ensureFile(ifcFile, '');
 ensureDir(binDir);
+
+function dumpLog() {
+  log('info', 'logger', 'Dumping log to file...');
+  const _messages = messages;
+  messages = [];
+  appendFile(logFile, _messages.join('\n') + '\n');
+}
+
+setInterval(dumpLog, 20 * 1000);
+process.on('beforeExit', dumpLog);
 
 export function getMainWindow() {
   return mainWindow;
@@ -179,6 +259,14 @@ ipcMain.handle('show-window', show);
 ipcMain.handle('change-colorscheme', (ev, config: any) =>
   changeColorscheme(config)
 );
+ipcMain.handle('get-config', (ev, name: string) => getConfig(name));
+ipcMain.handle('set-config', (ev, name: string, value: string) =>
+  setConfig(name, value)
+);
+ipcMain.handle('from-file', (ev, path: string, contents: string) =>
+  createFromFile(path, contents)
+);
+ipcMain.handle('install-pkg', (ev, name: string) => installPackage(name));
 ipcMain.handle('get-packages', getInstalledPackages);
 ipcMain.handle('remove-package', (ev, name: string) => uninstallPackage(name));
 ipcMain.handle('get-colorschemes', getColorschemes);
@@ -194,10 +282,7 @@ ipcMain.handle('force-reload-scripts', () => listScripts(true));
 ipcMain.handle('open-github', (ev, name: string) =>
   shell.openExternal('https://github.com/' + name)
 );
-ipcMain.handle('edit-script', async (ev, name: string) => {
-  access(join(SCRIPTDIR, name), constants.R_OK);
-  spawn('code', [join(SCRIPTDIR, name)]);
-});
+ipcMain.handle('edit-script', async (ev, name: string) => editScript(name));
 ipcMain.handle('get-colors', async () => {
   return JSON.parse((await readFile(colorSchemeFile)).toString());
 });
@@ -229,14 +314,15 @@ ipcMain.handle('set-font', (ev, font: string) => {
 ipcMain.handle('set-selected-tab', (ev, name: string) => setSelectedTab(name));
 ipcMain.handle('open', (ev, link: string) => shell.openExternal(link));
 ipcMain.handle('drop-file', (ev, file: DropFile) => dropFile(file));
+ipcMain.handle(
+  'event',
+  (e, name: string, widgetId: string | undefined, ...args: any[]) =>
+    event(name, widgetId, args)
+);
 
 let onTimeout = false;
 let call: [string, ...any[]][] = [];
 function resolveQueue() {
-  if (mainWindow?.isDestroyed) {
-    call = [];
-    return;
-  }
   if (call.length < 1) onTimeout = false;
   else setTimeout(resolveQueue, 500);
   try {
@@ -246,7 +332,6 @@ function resolveQueue() {
 }
 
 function queueMessage(name: string, ...args: any[]) {
-  if (mainWindow?.isDestroyed) return;
   if (!onTimeout) {
     mainWindow?.webContents?.send(name, ...args);
     onTimeout = true;
@@ -269,23 +354,7 @@ export function displayError(name: string, error: string) {
     mainWindow?.webContents?.send('display-error', name, error);
   } catch {}
 }
-
-(async function () {
-  ensureFile(ifcFile, '');
-  const prog = (await readFile(ifcFile)).toString().split('\n')[0].trim();
-  if (!prog || prog.length < 1) return;
-  runScript(prog);
-});
-watch(ifcFile, async () => {
-  ensureFile(ifcFile, '');
-  const prog = (await readFile(ifcFile)).toString().split('\n')[0].trim();
-  if (!prog || prog.length < 1) return;
-  runScript(prog);
-});
-
 async function syncBinDir() {
-  ensureDir(SCRIPTDIR);
-  ensureDir(binDir);
   const $scripts = await readdir(SCRIPTDIR);
   const scripts = $scripts
     .filter(
@@ -307,7 +376,7 @@ async function syncBinDir() {
     if (!binaries.includes(s)) {
       writeFile(
         join(binDir, s),
-        '#!/bin/sh\n\necho "' + s + '.ts" > ~/.qrunner/.ifc\n'
+        `#!/bin/bash\n\n"${join(QRunnerDirectory, 'run')}" "${s}.ts" "$@"`
       ).then(() =>
         chmod(
           join(binDir, s),
@@ -348,7 +417,7 @@ const installExtensions = async () => {
       extensions.map((name) => installer[name]),
       forceDownload
     )
-    .catch(console.log);
+    .catch((err: any) => log('error', 'exension-installer', '', err));
 };
 
 const createWindow = async () => {
@@ -382,6 +451,8 @@ const createWindow = async () => {
   mainWindow.setMenu(menu);
   mainWindow.setTitle('QRunner');
 
+  mainWindow.on('unresponsive', restart);
+
   mainWindow.on('ready-to-show', () => {
     if (!mainWindow) {
       throw new Error('"mainWindow" is not defined');
@@ -391,6 +462,7 @@ const createWindow = async () => {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+  mainWindow.webContents.closeDevTools();
 
   // Open urls in the user's browser
   mainWindow.webContents.setWindowOpenHandler((edata) => {
@@ -430,6 +502,8 @@ export function createWidget(name: string, content: string) {
   ipcMain.on('set-sized', resize);
 
   const id = randomUUID();
+  window.on('closed', () => event('close', id, []));
+  window.webContents.send('set-widget-id', id);
   window.setMenu(
     Menu.buildFromTemplate([
       {
@@ -462,6 +536,7 @@ export function createWidget(name: string, content: string) {
   window.loadURL(
     'data:text/html;base64,' + Buffer.from(content).toString('base64')
   );
+  window.webContents.closeDevTools();
   window.setTitle(name);
   window.webContents.setWindowOpenHandler((data) => {
     shell.openExternal(data.url);
@@ -474,9 +549,8 @@ export function createWidget(name: string, content: string) {
 export function updateWidget(id: string, content: string) {
   if (!widgets[id]) return;
   if (widgets[id].isDestroyed()) return delete widgets[id];
-  widgets[id].loadURL(
-    'data:text/html;base64,' + Buffer.from(content).toString('base64')
-  );
+  widgets[id].webContents.send('set-contents', content);
+  widgets[id].webContents.send('set-widget-id', id);
 }
 export async function createDevtools(obj?: any) {
   const RESOURCES_PATH = app.isPackaged
@@ -510,7 +584,38 @@ export async function createDevtools(obj?: any) {
   window.webContents.on('devtools-closed', () => window.close());
 }
 
+export let getAssetPath = (...f: string[]) => '';
+
 ipcMain.handle('devtools', (ev, obj) => createDevtools(obj));
+ipcMain.handle('start-drag', async (ev, file: string) => {
+  file = file.startsWith('~') ? join(homedir(), file.substring(1)) : file;
+  console.log(file);
+  mainWindow?.webContents?.startDrag({
+    file,
+    icon:
+      process.platform !== 'linux'
+        ? await nativeImage.createThumbnailFromPath(file, {
+            width: 32,
+            height: 32,
+          })
+        : nativeImage.createFromPath(getAssetPath('icon.png')).resize({
+            height: 32,
+            width: 32,
+          }),
+  });
+});
+
+function restart() {
+  try {
+    mainWindow?.close();
+  } catch {}
+  try {
+    mainWindow?.destroy();
+  } catch {}
+  try {
+    createWindow();
+  } catch {}
+}
 
 let tray: Tray;
 
@@ -526,21 +631,9 @@ app.whenReady().then(() => {
     ? path.join(process.resourcesPath, 'assets')
     : path.join(__dirname, '../../assets');
 
-  const getAssetPath = (...paths: string[]): string => {
+  getAssetPath = (...paths: string[]): string => {
     return path.join(RESOURCES_PATH, ...paths);
   };
-
-  function restart() {
-    try {
-      mainWindow?.close();
-    } catch {}
-    try {
-      mainWindow?.destroy();
-    } catch {}
-    try {
-      createWindow();
-    } catch {}
-  }
 
   tray = new Tray(getAssetPath('icon.png'));
   tray.setToolTip('QRunner');
@@ -576,3 +669,33 @@ app.on('activate', () => {
     createWindow();
   }
 });
+
+const server = createServer((req, res) => {
+  if (req.method !== 'POST' || req.url !== '/') return res.end();
+  if (req.headers['content-type'] !== 'application/json') return res.end();
+  let body = '';
+  req.on('data', (chunk) => (body += chunk));
+  req.on('end', () => {
+    try {
+      const json = JSON.parse(body);
+      if (
+        !json.script ||
+        !json.args ||
+        typeof json.script !== 'string' ||
+        !(json.args instanceof Array) ||
+        json.args.map((el: any) => typeof el === 'string').includes(false)
+      )
+        throw new Error();
+
+      runScript(json.script, ...json.args);
+      res.write('Launched script!');
+      res.end();
+    } catch {
+      res.write('Malformed json');
+      res.end();
+    }
+  });
+});
+
+server.listen(1205);
+log('info', 'server', 'Listening on http://localhost:1205');

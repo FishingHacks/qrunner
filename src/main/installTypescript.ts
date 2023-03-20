@@ -1,6 +1,7 @@
 import { spawnSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
+import { log } from './main';
 
 let packageManager: 'pnpm' | 'yarn' | 'npm' | null = null;
 
@@ -20,11 +21,11 @@ export default function installRequiredPackages(
     const manager = getPackageManager();
     for (const p of packages) {
         if (!existsSync(join(dir, 'node_modules', p))) {
-            console.log('Installing', p, '...');
+            log('info', 'package-manager', 'Installing %s', p);
             spawnSync(manager, [manager === 'yarn' ? 'add' : 'install', p], {
                 cwd: dir,
             });
-            console.log(p, 'is now installed!');
+            log('info', 'package-manager', 'Installed %s', p);
         }
     }
 }

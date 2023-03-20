@@ -46,13 +46,25 @@ export default function Question(
         if (selected < filteredOptions.length - 1) newSelected = selected + 1;
         else newSelected = 0;
       }
-      if (newSelected !== selected && selectedRef.current) {
-        selectedRef.current.parentElement?.children[newSelected]?.scrollIntoView(
-          {
-            behavior: 'smooth',
-            block: 'center',
-          }
-        );
+      if (newSelected !== selected) {
+        if (selectedRef.current) {
+          const element =
+            selectedRef.current.parentElement?.children[newSelected];
+          if (!element) return;
+          const rect = element.getBoundingClientRect();
+          if (
+            rect.top < 0 ||
+            rect.left < 0 ||
+            rect.bottom >
+              (window.innerHeight || document.documentElement.clientHeight) ||
+            rect.right >
+              (window.innerWidth || document.documentElement.clientWidth)
+          )
+            element.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+            });
+        }
         setSelected(newSelected);
         setDetails(undefined);
       }

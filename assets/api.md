@@ -276,10 +276,10 @@ isDirSync(path: string): boolean;
 ```typescript
 ///file: typedef.d.ts
 interface Process {
-    stdout: Buffer;
-    stderr: Buffer;
-    statusCode: number;
-    errored: boolean;
+  stdout: Buffer;
+  stderr: Buffer;
+  statusCode: number;
+  errored: boolean;
 }
 function $(command: string): Promise<Process>;
 ```
@@ -347,11 +347,11 @@ function env(key: string): Promise<string>;
 ```typescript
 ///file: typedef.d.ts
 interface TimeConfig {
-    milliseconds?: number;
-    seconds?: number;
-    minutes?: number;
-    hours?: number;
-    days?: number;
+  milliseconds?: number;
+  seconds?: number;
+  minutes?: number;
+  hours?: number;
+  days?: number;
 }
 function timeToMs(time: TimeConfig): number;
 ```
@@ -419,9 +419,9 @@ function getHomePath(): string;
 ```typescript
 ///file: typedef.d.ts
 function logToFile(
-    level: 'warn' | 'error' | 'info',
-    message: string,
-    ...args: any[]
+  level: 'warn' | 'error' | 'info',
+  message: string,
+  ...args: any[]
 ): Promise<void>;
 ```
 
@@ -436,9 +436,9 @@ function logToFile(
 ```typescript
 ///file: typedef.d.ts
 function logToFileSync(
-    level: 'warn' | 'error' | 'info',
-    message: string,
-    ...args: any[]
+  level: 'warn' | 'error' | 'info',
+  message: string,
+  ...args: any[]
 ): void;
 ```
 
@@ -531,25 +531,28 @@ function md(text: string): string;
 ```typescript
 ///file: typedef.d.ts
 declare enum Channel {
-    OPEN = 0,
-    COPY = 1,
-    PASTE = 2,
-    GET_ENV = 3,
-    WRITE = 4,
-    ARG = 5,
-    HIDE = 6,
-    SHOW = 7,
-    ERROR = 8,
-    SHOW_WIDGET = 9,
-    OPEN_DEVTOOLS = 10,
-    UPDATE_WIDGET = 11,
-    UPDATE_ERROR_LOADER = 12,
-    SET_TAB_DATA = 13,
-    ON_TAB = 14,
-    SET_DIV_DATA = 15,
-    SWITCH_TAB = 16,
-    GET_PREVIEW = 17,
-    SET_PREVIEW = 18,
+  OPEN = 0,
+  COPY = 1,
+  PASTE = 2,
+  GET_ENV = 3,
+  WRITE = 4,
+  ARG = 5,
+  HIDE = 6,
+  SHOW = 7,
+  ERROR = 8,
+  SHOW_WIDGET = 9,
+  OPEN_DEVTOOLS = 10,
+  UPDATE_WIDGET = 11,
+  UPDATE_ERROR_LOADER = 12,
+  SET_TAB_DATA = 13,
+  ON_TAB = 14,
+  SET_DIV_DATA = 15,
+  SWITCH_TAB = 16,
+  GET_PREVIEW = 17,
+  SET_PREVIEW = 18,
+  DROP = 19,
+  ON_EVENT = 20,
+  CLOSE_WIDGET = 21,
 }
 declare function send(channel: Channel, data: any): Promise<void>;
 ```
@@ -647,18 +650,18 @@ function writeToSelection(text: string): Promise<void>;
 ```typescript
 ///file: typedef.d.ts
 declare interface ArgOption {
-    name: string;
-    description?: string;
-    key: string;
-    background?: string;
-    image?: string;
+  name: string;
+  description?: string;
+  key: string;
+  background?: string;
+  image?: string;
 }
 declare function arg(
-    name: string,
-    options?: (string | ArgOption)[],
-    autocomplete?: (
-        key: string
-    ) => Promise<string | undefined> | string | undefined
+  name: string,
+  options?: (string | ArgOption)[],
+  autocomplete?: (
+    key: string
+  ) => Promise<string | undefined> | string | undefined
 ): Promise<string>;
 ```
 
@@ -794,8 +797,8 @@ function get(url: URL | string): Promise<any>;
 ```typescript
 ///file: typedef.d.ts
 function db<T extends any[] | Record<PropertyKey, any>>(
-    name: string,
-    defaultValue: T
+  name: string,
+  defaultValue: T
 ): Promise<{ write: () => Promise<void>; value: T }>;
 ```
 
@@ -812,8 +815,8 @@ function db<T extends any[] | Record<PropertyKey, any>>(
 ```typescript
 ///file: typedef.d.ts
 function loader(name: string): {
-    updateName(name: string): void;
-    stop(name?: string): void;
+  updateName(name: string): void;
+  stop(name?: string): void;
 };
 ```
 
@@ -830,10 +833,10 @@ function loader(name: string): {
 ```typescript
 ///file: typedef.d.ts
 interface Tab {
-    name: string;
-    key: string;
+  name: string;
+  key: string;
 }
-function setTabs(tabs: (string|Tab)[]): void;
+function setTabs(tabs: (string | Tab)[]): void;
 ```
 
 > Sets the tabs the user can choose from. Sets the selected tab to the first one.
@@ -913,6 +916,97 @@ function resetDiv(): void;
 
 ---
 
+## setTab
+
+```typescript
+///file: typedef.d.ts
+function setTab(name: string): void;
+```
+
+> Sets the currently selected tab
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## drop
+
+```typescript
+///file: typedef.d.ts
+declare interface DropFile {
+  path: string;
+  type: string;
+  base64: string;
+}
+function drop(): Promise<DropFile>;
+```
+
+> Opens a filepicker
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## edit
+
+```typescript
+///file: typedef.d.ts
+function edit(path: string): void;
+```
+
+> Open a file in the user-configured code editor
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## onEvent
+
+```typescript
+///file: typedef.d.ts
+function onEvent<T extends keyof WindowEventMap>(
+  name: T,
+  cb: (
+    widgetId: string | undefined,
+    args: [WindowEventMap[T], ...any[]]
+  ) => void
+): () => void;
+```
+
+> Listen to and event
+>
+> When the event occurred in the div(...) window, widgetId will be undefined
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## closeWidget
+
+```typescript
+///file: typedef.d.ts
+function closeWidget(widgetId: string): void;
+```
+
+> Closes a widget
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## startDrag
+
+```typescript
+///file: typedef.d.ts
+function startDrag(file: string): void;
+```
+
+> Start dragging the file supplied with the `file` argument
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
 ## Script Module
 
 > If a script ends with .module.ts, it's considered a module and won't show up in the executable scripts. It can be used by other scripts. An example for this could be a file explorer:
@@ -928,10 +1022,10 @@ import './globals';
 import { fileExplorer } from './fileExplorer.module';
 
 (async function () {
-    // ...
+  // ...
 
-    const file = await fileExplorer(getHomePath());
+  const file = await fileExplorer(getHomePath());
 
-    // ...
+  // ...
 })();
 ```

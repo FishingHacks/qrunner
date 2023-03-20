@@ -28,7 +28,7 @@ specifiers:
   '@typescript-eslint/eslint-plugin': ^5.51.0
   '@typescript-eslint/parser': ^5.51.0
   browserslist-config-erb: ^0.0.3
-  chalk: ^4.1.2
+  chalk: 4.1.2
   concurrently: ^7.6.0
   core-js: ^3.27.2
   cross-env: ^7.0.3
@@ -69,6 +69,7 @@ specifiers:
   rimraf: ^4.1.2
   sass: ^1.58.0
   sass-loader: ^13.2.0
+  source-map-support: ^0.5.21
   style-loader: ^3.3.1
   terser-webpack-plugin: ^5.3.6
   ts-jest: ^29.0.5
@@ -154,6 +155,7 @@ devDependencies:
   rimraf: 4.4.0
   sass: 1.59.3
   sass-loader: 13.2.1_sass@1.59.3+webpack@5.76.2
+  source-map-support: 0.5.21
   style-loader: 3.3.2_webpack@5.76.2
   terser-webpack-plugin: 5.3.7_webpack@5.76.2
   ts-jest: 29.0.5_doipufordlnvh5g4adbwayvyvy

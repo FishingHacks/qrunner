@@ -78,6 +78,9 @@ declare enum Channel {
     SWITCH_TAB = 16,
     GET_PREVIEW = 17,
     SET_PREVIEW = 18,
+    DROP = 19,
+    ON_EVENT = 20,
+    CLOSE_WIDGET = 21,
 }
 declare function send(channel: Channel, data: any): Promise<void>;
 declare function sendWithResponse(channel: Channel, data: any): Promise<any>;
@@ -134,6 +137,16 @@ declare interface DropFile {
     base64: string;
 }
 declare function drop(): Promise<DropFile>;
+declare function edit(path: string): void;
+declare function onEvent<T extends keyof WindowEventMap>(
+    name: T,
+    cb: (
+        widgetId: string | undefined,
+        args: [WindowEventMap[T], ...any[]]
+    ) => void
+): () => void;
+declare function closeWidget(widgetId: string): void;
+declare function startDrag(file: string): void;
 declare namespace API {
     function open(path: string): Promise<void>;
     function notify(title: string, body?: string): void;
@@ -215,4 +228,14 @@ declare namespace API {
     function div(code: string): void;
     function resetDiv(): void;
     function drop(): Promise<DropFile>;
+    function edit(path: string): void;
+    function onEvent<T extends keyof WindowEventMap>(
+        name: T,
+        cb: (
+            widgetId: string | undefined,
+            args: [WindowEventMap[T], ...any[]]
+        ) => void
+    ): () => void;
+    function closeWidget(widgetId: string): void;
+    function startDrag(file: string): void;
 }`;

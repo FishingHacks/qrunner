@@ -59,6 +59,10 @@ const channels = {
     GET_PREVIEW: 17,
     SET_PREVIEW: 18,
     DROP: 19,
+    ON_EVENT: 20,
+    CLOSE_WIDGET: 21,
+    START_DRAG: 22,
+    RUN_IN_EDITOR: 23,
 };
 
 function spawnPromise(command, args) {
@@ -658,6 +662,37 @@ function drop() {
     });
 }
 
+function edit(path) {
+    send(channels.RUN_IN_EDITOR, { file: path })
+}
+
+function onEvent(name, cb) {
+    function listen(data) {
+        if (typeof data !== 'object' || !data) return;
+        if (!data.channel || data.channel !== channels.ON_EVENT) return;
+        if (
+            typeof data.event !== 'string' ||
+            typeof data.args !== 'object' ||
+            !data.args ||
+            !(data.args instanceof Array)
+        )
+            return;
+        if (typeof data.widgetId !== 'string' && data.widgetId !== undefined)
+            return;
+        cb(data.event, data.widgetId, data.args);
+    }
+    process.on('message', listen);
+    return () => process.off('message', listen);
+}
+
+function closeWidget(widgetId) {
+    send(channels.CLOSE_WIDGET, { widgetId });
+}
+
+function startDrag(file) {
+    send(channels.START_DRAG, { file });
+}
+
 globalThis.API = {};
 
 function expose(name, obj) {
@@ -713,6 +748,10 @@ expose('div', div);
 expose('resetDiv', resetDiv);
 expose('setTab', setTab);
 expose('drop', drop);
+expose('edit', edit);
+expose('onEvent', onEvent);
+expose('closeWidget', closeWidget);
+expose('startDrag', startDrag);
 
 process.on('uncaughtException', (err) => {
     console.error('Unhandled Exeption!');

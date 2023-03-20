@@ -181,6 +181,7 @@ a:hover {
 .script-entry .script-description {
     font-size: small;
     color: var(--color-gray);
+    transition: color 250ms ease-in-out;
 }
 
 .details .name {
@@ -444,4 +445,31 @@ kbd {
 .option-details pre,
 .option-details code {
     white-space: pre-line;
+}
+
+.pagetitle {
+    -webkit-app-region: drag;
+    position: absolute;
+    height: calc(2rem + 16px);
+    width: calc(50vw - 2rem);
+    margin: 0px 1rem;
+    margin-left: calc(50vw + 1rem);
+    color: var(--color-primary);
+    font-weight: bold;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    display: flex;
+    align-items: flex-end;
+    flex-direction: column;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.pagetitle.withtabs {
+    height: calc(3rem + 23px);
+}
+
+.pagetitle * {
+    pointer-events: none;
 }

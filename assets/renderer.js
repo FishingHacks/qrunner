@@ -115,12 +115,30 @@ const api = {
     dropFile(file) {
         return ipcRenderer.invoke('drop-file', file);
     },
+    event(...args) {
+        return ipcRenderer.invoke('event', ...args);
+    },
+    getConfig(name) {
+        return ipcRenderer.invoke('get-config', name);
+    },
+    setConfig(name, value) {
+        return ipcRenderer.invoke('set-config', name, value);
+    },
+    createFromFile(name, value) {
+        return ipcRenderer.invoke('from-file', name, value);
+    },
+    installPackage(name) {
+        return ipcRenderer.invoke('install-pkg', name);
+    },
+    startDrag(file) {
+        return ipcRenderer.invoke('start-drag', file);
+    },
     addEventListener(name, cb) {
         ipcRenderer.on(name, cb);
-        return () => ipcRenderer.off(name, cb);
+        return () => ipcRenderer.removeListener(name, cb);
     },
     removeEventListener(name, cb) {
-        ipcRenderer.off(name, cb);
+        ipcRenderer.removeListener(name, cb);
     },
     emitEvent(name, ...args) {
         ipcRenderer.emit(name, ...args);

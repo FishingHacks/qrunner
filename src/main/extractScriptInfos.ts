@@ -1,8 +1,12 @@
+function generateRegex(name: string) {
+    return new RegExp('\\s*\\*\\s*@' + name + ' *([^\\n]*)\\n', 'g')
+}
 
 export function getInfo(content: string) {
-    const regexName = /\s*\*\s*@name\s*([^\n]+)\n/g;
-    const regexDescription = /\s*\*\s*@description\s*([^\n]+)\n/g;
-    const regexAuthor = /\s*\*\s*@author\s*([^\n]+)/g;
+    const regexName = generateRegex('name');
+    const regexDescription = generateRegex('description');
+    const regexUses = generateRegex('uses');
+    const regexAuthor = generateRegex('author');
     const authorRegex = /\s*([^< ]+)\s*<([^<]+)>/g;
     const commentRegex = /\/\*\*([\s\S]*?)\*\//g;
 
@@ -10,6 +14,7 @@ export function getInfo(content: string) {
     let description = '';
     let author = '';
     let url = '';
+    let uses = '';
 
     const comments: string[] = [];
 
@@ -23,6 +28,10 @@ export function getInfo(content: string) {
         if (!description) {
             const matched = regexDescription.exec(c);
             if (matched !== null) description = matched[1];
+        }
+        if (!uses) {
+            const matched = regexUses.exec(c);
+            if (matched !== null) uses = matched[1];
         }
         if (!author && !url) {
             const matched = regexAuthor.exec(c);
@@ -41,5 +50,6 @@ export function getInfo(content: string) {
         description,
         author,
         url,
+        uses
     };
 }

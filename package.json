@@ -129,7 +129,7 @@
     "@typescript-eslint/eslint-plugin": "^5.51.0",
     "@typescript-eslint/parser": "^5.51.0",
     "browserslist-config-erb": "^0.0.3",
-    "chalk": "^4.1.2",
+    "chalk": "4.1.2",
     "concurrently": "^7.6.0",
     "core-js": "^3.27.2",
     "cross-env": "^7.0.3",
@@ -164,6 +164,7 @@
     "rimraf": "^4.1.2",
     "sass": "^1.58.0",
     "sass-loader": "^13.2.0",
+    "source-map-support": "^0.5.21",
     "style-loader": "^3.3.1",
     "terser-webpack-plugin": "^5.3.6",
     "ts-jest": "^29.0.5",
@@ -226,7 +227,13 @@
       "target": [
         "AppImage"
       ],
-      "category": "Development"
+      "category": "Development",
+      "mimeTypes": [
+        "x-scheme-handler/qrunner"
+      ],
+      "desktop": {
+        "exec": "qrunner %u"
+      }
     },
     "directories": {
       "app": "release/app",
@@ -240,6 +247,12 @@
       "provider": "github",
       "owner": "electron-react-boilerplate",
       "repo": "electron-react-boilerplate"
+    },
+    "protocols": {
+      "name": "qrunner",
+      "schemes": [
+        "qrunner"
+      ]
     }
   },
   "collective": {
