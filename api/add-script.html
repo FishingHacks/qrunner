@@ -1,0 +1,29 @@
+<style>
+    body {
+        background-color: #171717;
+        color: white;
+    }
+    * {
+        margin: 0;
+    }
+    div {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100vw;
+        height: 100vh;
+    }
+</style>
+<script>
+    (function() {
+        const script = new URL(location.origin).searchParams.get('script');
+        if (!script) return history.back();
+
+        fetch('localhost:1205/add-script?script=' + encodeURIComponent(script)).then(() => {
+            history.back();
+        })
+    })();
+</script>
+<div>
+    <h1>Please wait...</h1>
+</div>
