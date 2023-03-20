@@ -734,7 +734,6 @@ const server = createServer(async (req, res) => {
           },
         ]
       );
-      console.log(val);
       if (val === 'no') return res.end();
       createFromFile(file.filename, file.content);
     } catch {}
