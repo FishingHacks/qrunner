@@ -201,38 +201,41 @@ export default function ScriptSearch(props: DefaultViewProps) {
         });
       } catch {
         API.open('https://github.com/settings/tokens/new');
-        token = await API.arg(
-          'Please input a legacy github token with gist permission!'
-        );
-        API.setConfig('githubToken', token);
+        try {
+          token = await API.arg(
+            'Please input a legacy github token with gist permission!'
+          );
+          API.setConfig('githubToken', token);
 
-        const json = await fetch('https://api.github.com/gists', {
-          method: 'post',
-          headers: {
-            Authorization: 'Bearer ' + token,
-            Accept: 'application/vnd.github+json',
-            // 'X-GitHub-Api-Version': '2022-11-28',
-          },
-          body: JSON.stringify({
-            public: true,
-            files: {
-              [filteredFiles[selected].path.split('/').pop() || 'unknown.ts']: {
-                content: await API.getScript(filteredFiles[selected].path),
-              },
+          const json = await fetch('https://api.github.com/gists', {
+            method: 'post',
+            headers: {
+              Authorization: 'Bearer ' + token,
+              Accept: 'application/vnd.github+json',
+              // 'X-GitHub-Api-Version': '2022-11-28',
             },
-            description: filteredFiles[selected].description,
-          }),
-        }).then((r) => {
-          if (r.status === 401) throw new Error();
-          return r.json();
-        });
+            body: JSON.stringify({
+              public: true,
+              files: {
+                [filteredFiles[selected].path.split('/').pop() || 'unknown.ts']:
+                  {
+                    content: await API.getScript(filteredFiles[selected].path),
+                  },
+              },
+              description: filteredFiles[selected].description,
+            }),
+          }).then((r) => {
+            if (r.status === 401) throw new Error();
+            return r.json();
+          });
 
-        await navigator.clipboard.writeText(
-          `https://gist.github.com/${json.owner.login}/${json.id}`
-        );
-        new Notification('Copied gist url', {
-          body: 'Copied gist url to your clipboard!',
-        });
+          await navigator.clipboard.writeText(
+            `https://gist.github.com/${json.owner.login}/${json.id}`
+          );
+          new Notification('Copied gist url', {
+            body: 'Copied gist url to your clipboard!',
+          });
+        } catch {}
       }
     }
   };
