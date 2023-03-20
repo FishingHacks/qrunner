@@ -15,13 +15,17 @@
     }
 </style>
 <script>
-    (function() {
-        const script = new URL(location.origin).searchParams.get('script');
+    (function () {
+        const script = new URL(location.href).searchParams.get('script');
         if (!script) return history.back();
 
-        fetch('localhost:1205/add-script?script=' + encodeURIComponent(script)).then(() => {
-            history.back();
-        })
+        fetch(
+            'http://localhost:1205/add-script?script=' +
+                encodeURIComponent(script)
+        ).then(
+            () => history.back(),
+            () => history.back()
+        );
     })();
 </script>
 <div>
