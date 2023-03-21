@@ -1,5 +1,5 @@
 import { ChildProcess, spawn } from 'child_process';
-import { access, readdir, readFile, rename, rm, writeFile } from 'fs/promises';
+import { access, cp, readdir, readFile, rename, rm, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { DropFile, File } from '../renderer/api';
 import { colorSchemes } from '../renderer/constants';
@@ -19,13 +19,14 @@ import { getPackageManager } from './installTypescript';
 import generateScript from './scriptGenerator';
 import { slugify } from './slugify';
 import { constants, existsSync } from 'fs';
+import { dialog } from 'electron';
 
 export async function createScript(name: string) {
   log('info', 'script helper', 'Creating script %s', name);
   const path = join(SCRIPTDIR, slugify(name.toLowerCase()) + '.ts');
   if (existsSync(path)) return;
   await writeFile(path, generateScript(name));
-  spawn('code', [path]);
+  editScript(path.split('/').pop() || '');
 }
 const processes: Record<number, ChildProcess> = {};
 export async function runScript(name: string, ...args: string[]) {
@@ -357,7 +358,7 @@ export async function createFromFile(path: string, file: string) {
   log('info', 'scripth helper', 'Creating script %s', path);
   if (existsSync(path)) return;
   await writeFile(join(SCRIPTDIR, path), file);
-  spawn('code', [join(SCRIPTDIR, path)]);
+  editScript(path);
 }
 
 export async function installPackage(name: string) {
@@ -399,7 +400,31 @@ export async function installPackage(name: string) {
 
 export async function editScript(path: string) {
   access(join(SCRIPTDIR, path), constants.R_OK);
-  spawn((await getConfig('editor')) || 'code', [join(SCRIPTDIR, path)]).on('error', () => {});
+  spawn((await getConfig('editor')) || 'code', [join(SCRIPTDIR, path)]).on(
+    'error',
+    () => {}
+  );
+}
+
+export async function importScriptFromFs(): Promise<string | undefined> {
+  const val = await dialog.showOpenDialog({
+    properties: ['openFile', 'showHiddenFiles'],
+    filters: [{ name: 'Scripts', extensions: ['js', 'ts', 'cjs', 'cts'] }],
+  });
+
+  if (val.canceled) return;
+  if (!val.filePaths[0]) return;
+  const file = val.filePaths[0];
+  if (!file.endsWith('ts') && !file.endsWith('js')) return;
+  let filename = file.split('/').pop();
+  if (!filename) return;
+  if (filename.endsWith('.cts') || filename.endsWith('cjs'))
+    filename =
+      filename.substring(0, filename.length - 3) +
+      filename.substring(filename.length - 2);
+  if (existsSync(join(SCRIPTDIR, filename))) return;
+  await cp(file, join(SCRIPTDIR, filename));
+  editScript(filename);
 }
 
 function transform(file: string) {

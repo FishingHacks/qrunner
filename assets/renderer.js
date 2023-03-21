@@ -16,9 +16,6 @@ const api = {
     getScripts() {
         return ipcRenderer.invoke('list-scripts');
     },
-    openScriptDirectory() {
-        return ipcRenderer.invoke('open-script-directory');
-    },
     forceReloadFiles() {
         return ipcRenderer.invoke('force-reload-scripts');
     },
@@ -132,6 +129,9 @@ const api = {
     },
     startDrag(file) {
         return ipcRenderer.invoke('start-drag', file);
+    },
+    importFileFromComputer() {
+        return ipcRenderer.invoke('import-file-from-fs');
     },
     addEventListener(name, cb) {
         ipcRenderer.on(name, cb);

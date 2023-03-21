@@ -1,7 +1,7 @@
 import { slugify } from 'main/slugify';
 import { useEffect, useRef, useState } from 'react';
 import { API } from './api';
-import { DefaultViewProps, loader, loaderIsRunning } from './App';
+import { $setCode, DefaultViewProps, loader, loaderIsRunning } from './App';
 import CodeHighlight from './highlight';
 import ScrollArea from './scrollarea';
 import Username from './username';
@@ -158,17 +158,21 @@ export default function ScriptSearch(props: DefaultViewProps) {
     } else if (opt === 'delete-file') {
       API.removeScript(filteredFiles[selected].path);
     } else if (opt === 'rename') {
-      const newname = await API.arg('New Name');
-      API.rename(filteredFiles[selected].path, newname);
+      try {
+        const newname = await API.arg('New Name');
+        API.rename(filteredFiles[selected].path, newname);
+      } catch {}
     } else if (opt === 'publish') {
       let token = await API.getConfig('githubToken');
       if (!token) {
         API.open('https://github.com/settings/tokens/new');
-        token = await API.arg(
-          'Please input a legacy github token with the gist permission!'
-        );
-        if (!token) return API.arg('Error: No token specified!');
-        API.setConfig('githubToken', token);
+        try {
+          token = await API.arg(
+            'Please input a legacy github token with the gist permission!'
+          );
+          if (!token) return API.arg('Error: No token specified!');
+          API.setConfig('githubToken', token);
+        } catch {}
       }
 
       try {
@@ -199,6 +203,10 @@ export default function ScriptSearch(props: DefaultViewProps) {
         new Notification('Copied gist url', {
           body: 'Copied gist url to your clipboard!',
         });
+        $setCode(
+          `<p>Gist URL: <a href="https://gist.github.com/${json.owner.login}/${json.id}">https://gist.github.com/${json.owner.login}/${json.id}</a><br />Installation URL: <a href="https://fishinghacks.github.io/qrunner/api/add-script.html?script=${json.id}">https://fishinghacks.github.io/qrunner/api/add-script.html?script=${json.id}</a><br /><br />Markdown Code:</p>` +
+            `<pre># ${filteredFiles[selected].name}\n\n\n[Add ${filteredFiles[selected].name} to qRunner](https://fishinghacks.github.io/qrunner/api/add-script.html?script=${json.id})</pre>`
+        );
       } catch {
         API.open('https://github.com/settings/tokens/new');
         try {
@@ -212,7 +220,6 @@ export default function ScriptSearch(props: DefaultViewProps) {
             headers: {
               Authorization: 'Bearer ' + token,
               Accept: 'application/vnd.github+json',
-              // 'X-GitHub-Api-Version': '2022-11-28',
             },
             body: JSON.stringify({
               public: true,
@@ -273,7 +280,14 @@ export default function ScriptSearch(props: DefaultViewProps) {
       <p>
         Directory:{' '}
         <a
-          onClick={dir === 'loading' ? undefined : API.openScriptDirectory}
+          onClick={
+            dir === 'loading'
+              ? undefined
+              : (e) => {
+                  API.open(dir).then(console.log, console.log);
+                  e.preventDefault();
+                }
+          }
           className={dir === 'loading' ? '' : 'link'}
           href={dir}
           onDragStart={(ev) => {

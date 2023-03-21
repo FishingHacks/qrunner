@@ -447,8 +447,11 @@ kbd {
     white-space: pre-line;
 }
 
-.pagetitle {
+.drag-area {
     -webkit-app-region: drag;
+}
+
+.pagetitle {
     position: absolute;
     height: calc(2rem + 16px);
     width: calc(50vw - 2rem);

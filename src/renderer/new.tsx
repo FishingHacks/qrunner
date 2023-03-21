@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react';
 import { API } from './api';
 import { DefaultViewProps } from './App';
+import { KeySymbols } from './constants';
 import { Kbd } from './kbd';
 
-let $move = () => {};
+let $move = (down: boolean) => {};
 let $click = () => {};
 
 export default function New(props: DefaultViewProps) {
   props.config.disableSearch = true;
   const [selected, setSelected] = useState(0);
 
-  $move = () => {
-    setSelected((s) => 1 - s);
+  $move = (down: boolean) => {
+    setSelected((s) => (3 + s + (down ? 1 : -1)) % 3);
   };
   $click = async () => {
     if (selected === 0) {
@@ -20,7 +21,7 @@ export default function New(props: DefaultViewProps) {
         if (!name) return;
         await API.createScript(name);
       } catch {}
-    } else {
+    } else if (selected === 1) {
       try {
         const url = await API.arg('Gist url or id:');
         if (!url) return;
@@ -36,7 +37,7 @@ export default function New(props: DefaultViewProps) {
           file.content.toString()
         );
       } catch {}
-    }
+    } else if (selected === 2) API.importFileFromComputer();
   };
 
   useEffect(() => {
@@ -46,17 +47,17 @@ export default function New(props: DefaultViewProps) {
         ev.preventDefault();
       }
       if (ev.key === 'ArrowUp' || ev.key === 'ArrowDown') {
-        $move();
+        $move(ev.key === 'ArrowDown');
         ev.preventDefault();
       }
     }
 
     props.config.setFooter([
       <p>
-        <Kbd>arrowDown</Kbd>: Move down
+        <Kbd children={KeySymbols.arrowUp} />: Move down
       </p>,
       <p>
-        <Kbd>arrowUp</Kbd>: Move Up
+        <Kbd>{KeySymbols.arrowDown}</Kbd>: Move Up
       </p>,
       <p>
         <Kbd>enter</Kbd>: Execute action
@@ -69,7 +70,7 @@ export default function New(props: DefaultViewProps) {
   return (
     <div className="options">
       <div
-        className={"option " + (selected === 0 && 'selected')}
+        className={'option ' + (selected === 0 && 'selected')}
         onMouseOver={() => setSelected(0)}
         onClick={async () => {
           try {
@@ -85,7 +86,7 @@ export default function New(props: DefaultViewProps) {
         </div>
       </div>
       <div
-        className={"option " + (selected === 1 && 'selected')}
+        className={'option ' + (selected === 1 && 'selected')}
         onMouseOver={() => setSelected(1)}
         onClick={async () => {
           try {
@@ -108,6 +109,16 @@ export default function New(props: DefaultViewProps) {
         <div className="opt-name">By Github Gist</div>
         <div className="opt-description opt-highlight">
           Create a new Script from a github gist
+        </div>
+      </div>
+      <div
+        className={'option ' + (selected === 2 && 'selected')}
+        onMouseOver={() => setSelected(2)}
+        onClick={API.importFileFromComputer}
+      >
+        <div className="opt-name">Import script</div>
+        <div className="opt-description opt-highlight">
+          Import a script that is somewhere on your Computer
         </div>
       </div>
     </div>

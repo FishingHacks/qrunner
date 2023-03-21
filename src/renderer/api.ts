@@ -8,7 +8,6 @@ interface ElectronApi {
   getScriptDir(): pStr;
   getScript(name: string): pStr;
   getScripts(): Promise<File[]>;
-  openScriptDirectory(): pVoid;
   forceReloadFiles(): Promise<File[]>;
   openGithub(name: string): pVoid;
   editScript(name: string): pVoid;
@@ -48,6 +47,7 @@ interface ElectronApi {
   createFromFile(path: string, contents: string): pVoid;
   installPackage(name: string): pVoid;
   startDrag(file: string): pVoid;
+  importFileFromComputer(): pVoid;
   addEventListener(
     event: string,
     cb: (event: any, ...args: any[]) => void

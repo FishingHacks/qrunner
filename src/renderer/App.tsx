@@ -86,7 +86,7 @@ interface UTab {
 }
 let $setDrop = (value: boolean) => {};
 let $setUTabs = (tabs: UTab[]) => {};
-let $setCode = (code: string) => {};
+export let $setCode = (code: string) => {};
 let $setSelectedTab = (name: string) => {};
 
 const App = () => {
@@ -346,18 +346,16 @@ const App = () => {
       inputRef.current.placeholder = props.config.searchName;
     if (inputRef.current)
       inputRef.current.disabled = props.config.disableSearch;
+    if (inputRef.current)
+      props.config.disableSearch
+        ? inputRef.current.classList.add('drag-area')
+        : inputRef.current.classList.remove('drag-area');
+
     if (footerRef.current)
       footerRef.current.style.display =
         props.config.disableBar || footer.length < 1 ? 'none' : 'flex';
     if (tabRef.current)
       tabRef.current.style.display = props.config.disableTabs ? 'none' : 'flex';
-    if (inputRef.current)
-      inputRef.current.style.display =
-        props.config.disableTabs &&
-        props.config.disableSearch &&
-        (!uTabData.enabled || uTabData.names.length < 1)
-          ? 'none'
-          : 'inline-block';
     if (inputRef.current)
       inputRef.current.style.borderBottom =
         props.config.disableTabs &&
@@ -369,16 +367,8 @@ const App = () => {
         titleRef.current.classList.remove('withtabs');
       else titleRef.current.classList.add('withtabs');
 
-    let pxMinus = 0;
-    let remMinus = 0;
-    if (
-      !props.config.disableSearch ||
-      !props.config.disableTabs ||
-      (uTabData.enabled && uTabData.names.length > 0)
-    ) {
-      remMinus += 2;
-      pxMinus += 17;
-    }
+    let pxMinus = 17;
+    let remMinus = 2;
     if (
       !props.config.disableTabs ||
       (uTabData.enabled && uTabData.names.length > 0)
@@ -447,7 +437,7 @@ const App = () => {
         onChange={(e) => setSearch(e.target.value)}
         onClick={() => inputRef.current?.focus()}
       />
-      <div className="pagetitle" ref={titleRef}>
+      <div className="pagetitle drag-area" ref={titleRef}>
         <p>
           {!hasScriptFunctionality
             ? tabs.find((el) => el.id === tab)?.name

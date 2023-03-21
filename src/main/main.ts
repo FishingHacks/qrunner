@@ -54,6 +54,7 @@ import {
   installPackage,
   kill,
   listScripts,
+  importScriptFromFs,
   removeScript,
   renameScript,
   runScript,
@@ -121,7 +122,7 @@ export function log(
     `[${new Date().toLocaleString()}] [${level}]: ${module} | ${format(
       message,
       ...args
-    )}`
+    )}`.substring(0, 200) // to prevent huge, 40mb log files after a few hours
   );
 }
 
@@ -201,7 +202,6 @@ ipcMain.on('get-preview', (ev, key: string) => getArgPreview(key));
 ipcMain.handle('kill-script', (ev, pid: number) => kill(pid));
 ipcMain.handle('get-script-dir', () => SCRIPTDIR);
 ipcMain.handle('get-script', async (ev, name: string) => getScript(name));
-ipcMain.handle('open-script-directory', () => shell.openPath(SCRIPTDIR));
 export let uiChangeCb: (() => void)[] = [];
 export async function arg(name: string, options?: (string | ArgOption)[]) {
   await show();
@@ -271,6 +271,7 @@ ipcMain.handle('set-config', (ev, name: string, value: string) =>
 ipcMain.handle('from-file', (ev, path: string, contents: string) =>
   createFromFile(path, contents)
 );
+ipcMain.handle('import-file-from-fs', importScriptFromFs);
 ipcMain.handle('install-pkg', (ev, name: string) => installPackage(name));
 ipcMain.handle('get-packages', getInstalledPackages);
 ipcMain.handle('remove-package', (ev, name: string) => uninstallPackage(name));
@@ -712,7 +713,9 @@ const server = createServer(async (req, res) => {
       return res.end();
     const id = script.split('/').pop();
     if (!id) return res.end();
-    const file = await fetch('https://api.github.com/gists/' + encodeURIComponent(id))
+    const file = await fetch(
+      'https://api.github.com/gists/' + encodeURIComponent(id)
+    )
       .then((res) => res.json())
       .then((json) => Object.values(json?.files || {})[0] as any);
     if (!file || !file.filename || !file.content) return res.end();
@@ -739,7 +742,7 @@ const server = createServer(async (req, res) => {
     } catch {}
 
     res.end();
-  }
+  } else res.end();
 });
 
 server.listen(1205);
