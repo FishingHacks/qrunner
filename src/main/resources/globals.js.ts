@@ -23,7 +23,7 @@ const { spawn: $spawn, spawnSync } = require('child_process');
  * @type {{get(): typeof import('os')}}
  */
 const os = lazyRequire('os');
-const { join } = require('path');
+const { join, sep } = require('path');
 /**
  * @type {{get(): typeof import('util')}}
  */
@@ -104,7 +104,7 @@ const promises = [];
 
 const packageDir = process.cwd();
 const scriptName = ((str) => str.substring(0, str.length - 4))(
-    process.argv[2].split('/').pop()
+    process.argv[2].split(sep).pop()
 );
 
 const envFile = join(packageDir, '../' + scriptName + '.env.json');
@@ -130,7 +130,7 @@ const logFile = join(
     \`log-\${today.getFullYear()}-\${today.getMonth()}-\${
         today.getDate() + 1
     }-\${today.getHours()}-\${today.getMinutes()}-\${today.getSeconds()}-\${process.argv[2]
-        .split('/')
+        .split(sep)
         .pop()}.txt\`
 );
 let packageManager = '';
@@ -330,7 +330,7 @@ async function npm(path) {
         if (spawned.error) throw error;
         if (spawned.status !== 0)
             throw (
-                'Installing exited with non-zero exit code.\n' +
+                'Installing exited with non-zero exit code.\\n' +
                 spawned.output
                     .filter((el) => !!el)
                     .map((el) => el.toString())

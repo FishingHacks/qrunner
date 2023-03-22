@@ -8,7 +8,7 @@ import {
   rm,
   writeFile,
 } from 'fs/promises';
-import { join } from 'path';
+import { join, sep } from 'path';
 import { DropFile, File } from '../renderer/api';
 import { colorSchemes } from '../renderer/constants';
 import {
@@ -34,7 +34,7 @@ export async function createScript(name: string) {
   const path = join(SCRIPTDIR, slugify(name.toLowerCase()) + '.ts');
   if (existsSync(path)) return;
   await writeFile(path, generateScript(name));
-  editScript(path.split('/').pop() || '');
+  editScript(path.split(sep).pop() || '');
 }
 const processes: Record<number, ChildProcess> = {};
 export async function runScript(name: string, ...args: string[]) {
@@ -142,7 +142,7 @@ export function kill(pid: number) {
     'info',
     'script helper',
     '%s exited with signal SIGKILL (pid: %d)',
-    processes[pid].spawnargs[2].split('/').pop(),
+    processes[pid].spawnargs[2].split(sep).pop(),
     pid
   );
   delete processes[pid];
@@ -170,7 +170,7 @@ export function getProcs() {
 
   for (const pid in processes) {
     newProcs[pid] =
-      processes[pid].spawnargs[2].split('/').pop() || 'no process name found';
+      processes[pid].spawnargs[2].split(sep).pop() || 'no process name found';
     newProcs[pid] = newProcs[pid].substring(0, newProcs[pid].length - 3) + 'ts'; // remove the cts extension, as .cts is the "transpiled" version :3
   }
 
@@ -249,7 +249,7 @@ export async function listScripts(force?: boolean) {
 export function getScriptName(pid: number) {
   const proc = processes[pid];
   if (!proc) return '';
-  return proc.spawnargs[2].split('/').pop() || 'unknown script';
+  return proc.spawnargs[2].split(sep).pop() || 'unknown script';
 }
 
 export async function removeScript(path: string) {
@@ -426,7 +426,7 @@ export async function importScriptFromFs(): Promise<string | undefined> {
   if (!val.filePaths[0]) return;
   const file = val.filePaths[0];
   if (!file.endsWith('ts') && !file.endsWith('js')) return;
-  let filename = file.split('/').pop();
+  let filename = file.split(sep).pop();
   if (!filename) return;
   if (filename.endsWith('.cts') || filename.endsWith('cjs'))
     filename =

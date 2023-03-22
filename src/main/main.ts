@@ -1,6 +1,6 @@
 /* eslint global-require: off, no-console: off, promise/always-return: off */
 
-import path from 'path';
+import path, { sep } from 'path';
 import { resolveHtmlPath } from './util';
 import chalk from 'chalk';
 import { spawn, spawnSync } from 'child_process';
@@ -17,7 +17,6 @@ import {
 } from 'electron';
 import { constants, existsSync, mkdirSync, watch, writeFileSync } from 'fs';
 import {
-  access,
   appendFile,
   chmod,
   readdir,
@@ -159,6 +158,7 @@ export const tmpDir = join(QRunnerDirectory, 'tmp');
 
 ensureDir(tmpDir);
 ensureDir(SCRIPTDIR);
+ensureFile(join(SCRIPTDIR, 'package.json'), '{ "name": "qrunner scripts", "dependencies": {} }');
 ensureFile(colorSchemeFile, JSON.stringify(colorsDefault));
 ensureDir(colorSchemeDir);
 ensureFile(join(SCRIPTDIR, 'globals.d.ts'), globalsDTS);
@@ -724,7 +724,7 @@ const server = createServer(async (req, res) => {
     if (!script) return res.end();
     if (!script.startsWith('https://gist.github.com/') && script.includes('/'))
       return res.end();
-    const id = script.split('/').pop();
+    const id = script.split(sep).pop();
     if (!id) return res.end();
     const file = await fetch(
       'https://api.github.com/gists/' + encodeURIComponent(id)

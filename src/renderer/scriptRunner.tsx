@@ -150,7 +150,7 @@ export default function ScriptSearch(props: DefaultViewProps) {
       },
     ]).catch(() => {});
     if (opt === 'copy-bin-path') {
-      const split = dir.split('/');
+      const split = dir.split(/\/\\/g);
       split.pop();
       split.push(
         'bin',
@@ -193,7 +193,7 @@ export default function ScriptSearch(props: DefaultViewProps) {
           body: JSON.stringify({
             public: true,
             files: {
-              [filteredFiles[selected].path.split('/').pop() || 'unknown.ts']: {
+              [filteredFiles[selected].path.split(/\/\\/g).pop() || 'unknown.ts']: {
                 content: await API.getScript(filteredFiles[selected].path),
               },
             },
@@ -233,7 +233,7 @@ export default function ScriptSearch(props: DefaultViewProps) {
             body: JSON.stringify({
               public: true,
               files: {
-                [filteredFiles[selected].path.split('/').pop() || 'unknown.ts']:
+                [filteredFiles[selected].path.split(/\/\\/g).pop() || 'unknown.ts']:
                   {
                     content: await API.getScript(filteredFiles[selected].path),
                   },
