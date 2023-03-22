@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { API } from './api';
-import { DefaultViewProps } from './App';
+import {
+  $setLoaderData,
+  DefaultViewProps,
+  loader,
+  loaderIsRunning,
+  resetLoader,
+} from './App';
 import { KeySymbols } from './constants';
 import { Kbd } from './kbd';
 
@@ -73,6 +79,7 @@ export default function New(props: DefaultViewProps) {
         className={'option ' + (selected === 0 && 'selected')}
         onMouseOver={() => setSelected(0)}
         onClick={async () => {
+          if (loaderIsRunning) return;
           try {
             const name = await API.arg('Name:');
             if (!name) return;
@@ -89,6 +96,7 @@ export default function New(props: DefaultViewProps) {
         className={'option ' + (selected === 1 && 'selected')}
         onMouseOver={() => setSelected(1)}
         onClick={async () => {
+          if (loaderIsRunning) return;
           try {
             const url = await API.arg('Gist url or id:');
             if (!url) return;

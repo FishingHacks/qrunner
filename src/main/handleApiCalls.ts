@@ -43,6 +43,7 @@ export const channels = {
   CLOSE_WIDGET: 21,
   START_DRAG: 22,
   RUN_IN_EDITOR: 23,
+  TEXTAREA: 24,
 };
 
 export default function handle(
@@ -101,7 +102,7 @@ export default function handle(
       (async function () {
         try {
           respond({
-            value: await arg(data.name.toString(), data.options),
+            value: await arg(data.name.toString(), data.options, data.hint),
           });
         } catch {
           respond({ value: undefined });
@@ -190,7 +191,10 @@ export default function handle(
   } else if (channel === channels.RUN_IN_EDITOR) {
     if (!data.file || typeof data.file !== 'string') return;
     getConfig('editor').then((editor) =>
-      spawn(editor || 'code', [data.file.toString()]).on('error', () => {})
+      spawn(editor || 'code', [data.file.toString()], { shell: true }).on('error', () => {})
     );
+  } else if (channel === channels.TEXTAREA) {
+    if (!data.name || typeof data.name !== 'string') return;
+    getMainWindow()?.webContents?.send('textarea', data.name.toString());
   }
 }

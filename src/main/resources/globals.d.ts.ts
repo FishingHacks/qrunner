@@ -101,7 +101,8 @@ declare function arg(
     options?: (string | ArgOption)[],
     autocomplete?: (
         key: string
-    ) => Promise<string | undefined> | string | undefined
+    ) => Promise<string | undefined> | string | undefined,
+    hint?: string,
 ): Promise<string>;
 declare function hide(): Promise<void>;
 declare function show(): Promise<void>;
@@ -125,7 +126,7 @@ interface Tab {
     name: string;
     key: string;
 }
-declare function setTabs(tabs: (string|Tab)[]): void;
+declare function setTabs(tabs: (string | Tab)[]): void;
 declare function removeTabs(): void;
 declare function onTab(name: string, cb: () => any): void;
 declare function setTab(name: string): void;
@@ -147,6 +148,12 @@ declare function onEvent<T extends keyof WindowEventMap>(
 ): () => void;
 declare function closeWidget(widgetId: string): void;
 declare function startDrag(file: string): void;
+declare function textarea(name: string): Promise<string>;
+declare function tmp(
+    content: string,
+    name?: string,
+    extension?: string
+): string;
 declare namespace API {
     function open(path: string): Promise<void>;
     function notify(title: string, body?: string): void;
@@ -202,7 +209,8 @@ declare namespace API {
         options?: (string | ArgOption)[],
         autocomplete?: (
             key: string
-        ) => Promise<string | undefined> | string | undefined
+        ) => Promise<string | undefined> | string | undefined,
+        hint?: string,
     ): Promise<string>;
     function hide(): Promise<void>;
     function show(): Promise<void>;
@@ -221,7 +229,7 @@ declare namespace API {
         updateName(name: string): void;
         stop(name?: string): void;
     };
-    function setTabs(tabs: (string|Tab)[]): void;
+    function setTabs(tabs: (string | Tab)[]): void;
     function removeTabs(): void;
     function onTab(name: string, cb: () => any): () => void;
     function setTab(name: string): void;
@@ -238,4 +246,6 @@ declare namespace API {
     ): () => void;
     function closeWidget(widgetId: string): void;
     function startDrag(file: string): void;
+    function textarea(name: string): Promise<string>;
+    function tmp(content: string, name?: string, extension?: string): string;
 }`;

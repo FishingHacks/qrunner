@@ -79,6 +79,7 @@ body {
     background-color: var(--color-background);
     color: var(--color-text);
     overflow-x: hidden;
+    accent-color: var(--color-primary);
 }
 
 .subbar {
@@ -416,7 +417,6 @@ kbd {
     background-color: #16a34a;
     border-radius: 3px;
     padding: 6px 2rem;
-    pointer-events: all;
     color: black;
     transition: transform 700ms ease;
     align-content: center;
@@ -475,4 +475,13 @@ kbd {
 
 .pagetitle * {
     pointer-events: none;
+}
+
+.hint * {
+    margin: 0px;
+}
+
+.hint {
+    width: calc(100vw - 2rem);
+    margin: 0px 1rem;
 }

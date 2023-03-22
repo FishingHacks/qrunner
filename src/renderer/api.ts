@@ -15,7 +15,8 @@ interface ElectronApi {
   respond(string?: string | null): pVoid;
   arg<T extends string>(
     name: string,
-    options?: (T | ArgOption<T>)[]
+    options?: (T | ArgOption<T>)[],
+    hint?: string
   ): Promise<T>;
   getProcs(): Promise<Record<number, string>>;
   killProcess(pid: number): pVoid;
@@ -48,6 +49,7 @@ interface ElectronApi {
   installPackage(name: string): pVoid;
   startDrag(file: string): pVoid;
   importFileFromComputer(): pVoid;
+  submitTextarea(value: string | null | undefined): pVoid;
   addEventListener(
     event: string,
     cb: (event: any, ...args: any[]) => void

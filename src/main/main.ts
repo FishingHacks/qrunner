@@ -61,6 +61,7 @@ import {
   setConfig,
   setSelectedTab,
   uninstallPackage,
+  textareaSubmit,
 } from './ipc';
 import installRequiredPackages from './installTypescript';
 import { randomUUID } from 'crypto';
@@ -128,8 +129,11 @@ export function log(
 
 export const runner = (() => {
   // if (!spawnSync('tsx', ['-v']).error) return 'tsx'; // error: TSX doesn't work with IPC connections, see https://github.com/esbuild-kit/tsx/issues/201
-  if (!spawnSync('ts-node', ['-v']).error) return 'ts-node';
-  if (!spawnSync(PATCHED_TSX_PATH, ['-v']).error && PATCHED_TSX_PATH)
+  if (!spawnSync('ts-node', ['-v'], { shell: true }).error) return 'ts-node';
+  if (
+    !spawnSync(PATCHED_TSX_PATH, ['-v'], { shell: true }).error &&
+    PATCHED_TSX_PATH
+  )
     return PATCHED_TSX_PATH;
   // todo: node & tsc
 
@@ -151,9 +155,11 @@ export const binDir = join(QRunnerDirectory, 'bin');
 export const fontFile = join(QRunnerDirectory, 'font');
 export const configFile = join(QRunnerDirectory, '.config.json');
 export const logFile = join(logDir, 'console.log');
+export const tmpDir = join(QRunnerDirectory, 'tmp');
 
-ensureFile(colorSchemeFile, JSON.stringify(colorsDefault));
+ensureDir(tmpDir);
 ensureDir(SCRIPTDIR);
+ensureFile(colorSchemeFile, JSON.stringify(colorsDefault));
 ensureDir(colorSchemeDir);
 ensureFile(join(SCRIPTDIR, 'globals.d.ts'), globalsDTS);
 ensureFile(join(SCRIPTDIR, 'globals.js'), globalsJS);
@@ -183,9 +189,11 @@ installRequiredPackages(SCRIPTDIR, [
 ensureDir(binDir);
 
 function dumpLog() {
-  log('info', 'logger', 'Dumping log to file...');
   const _messages = messages;
   messages = [];
+  log('info', 'logger', 'Dumping log to file...');
+  messages = [];
+  if (_messages.length < 1) return;
   appendFile(logFile, _messages.join('\n') + '\n');
 }
 
@@ -196,6 +204,8 @@ export function getMainWindow() {
   return mainWindow;
 }
 
+readdir(tmpDir).then((dir) => dir.forEach((f) => rm(f)));
+
 ipcMain.handle('create-script', async (ev, name: string) => createScript(name));
 ipcMain.handle('run-script', (ev, name: string) => runScript(name));
 ipcMain.on('get-preview', (ev, key: string) => getArgPreview(key));
@@ -203,7 +213,7 @@ ipcMain.handle('kill-script', (ev, pid: number) => kill(pid));
 ipcMain.handle('get-script-dir', () => SCRIPTDIR);
 ipcMain.handle('get-script', async (ev, name: string) => getScript(name));
 export let uiChangeCb: (() => void)[] = [];
-export async function arg(name: string, options?: (string | ArgOption)[]) {
+export async function arg(name: string, options?: (string | ArgOption)[], hint?: string) {
   await show();
   for (const cb of uiChangeCb)
     try {
@@ -211,7 +221,7 @@ export async function arg(name: string, options?: (string | ArgOption)[]) {
     } catch {}
   uiChangeCb = [];
 
-  mainWindow?.webContents?.send('arg-open', name, options);
+  mainWindow?.webContents?.send('arg-open', name, options, hint);
 
   return new Promise((res, rej) => {
     let returned = false;
@@ -254,8 +264,8 @@ export async function show() {
       mainWindow?.webContents.once('did-finish-load', r)
     );
 }
-ipcMain.handle('arg', (ev, name: string, options?: (string | ArgOption)[]) => {
-  return arg(name, options);
+ipcMain.handle('arg', (ev, name: string, options?: (string | ArgOption)[], hint?: string) => {
+  return arg(name, options, hint);
 });
 ipcMain.handle('get-processes', getProcs);
 ipcMain.handle('kill-proc', (ev, pid: number) => kill(pid));
@@ -610,6 +620,9 @@ ipcMain.handle('start-drag', async (ev, file: string) => {
           }),
   });
 });
+ipcMain.handle('textarea-submit', (ev, value: undefined | null | string) =>
+  textareaSubmit(value)
+);
 
 function restart() {
   try {

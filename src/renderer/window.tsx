@@ -128,9 +128,7 @@ export default function Window(props: DefaultViewProps & { code: string }) {
       if (e.key === 'Escape') {
         e.preventDefault();
         API.emitEvent('set-user-window-code', '');
-        API.getProcs().then((p) =>
-          Object.keys(p).map((pid) => API.killProcess(Number(pid)))
-        );
+        API.event('close', undefined);
       }
     }
     window.addEventListener('keydown', onKeyDown);

@@ -1,5 +1,13 @@
 import { ChildProcess, spawn } from 'child_process';
-import { access, cp, readdir, readFile, rename, rm, writeFile } from 'fs/promises';
+import {
+  access,
+  cp,
+  readdir,
+  readFile,
+  rename,
+  rm,
+  writeFile,
+} from 'fs/promises';
 import { join } from 'path';
 import { DropFile, File } from '../renderer/api';
 import { colorSchemes } from '../renderer/constants';
@@ -46,7 +54,8 @@ export async function runScript(name: string, ...args: string[]) {
       [join(SCRIPTDIR, 'globals.js'), newName, ...args],
       {
         cwd: SCRIPTDIR,
-        stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+        stdio: ['ipc'],
+        shell: true,
       }
     );
     log(
@@ -216,7 +225,7 @@ let cachedFiles: File[] = [];
 export async function listScripts(force?: boolean) {
   const files = (await readdir(SCRIPTDIR)).filter(
     (el) =>
-      !el.endsWith('.d.ts') && el.endsWith('.ts') && !el.endsWith('.module.ts')
+      !el.endsWith('.d.ts') && el.endsWith('.ts')
   );
   if (cachedFiles.length === files.length && !force) return cachedFiles;
   const newFiles: File[] = [];
@@ -268,6 +277,7 @@ export function uninstallPackage(name: string) {
   log('info', 'package-manager', 'Uninstalling %s', name);
   const spawned = spawn(getPackageManager(), ['remove', name], {
     cwd: SCRIPTDIR,
+    shell: true,
   });
 
   let returned = false;
@@ -368,6 +378,7 @@ export async function installPackage(name: string) {
     [getPackageManager() === 'yarn' ? 'add' : 'install', name],
     {
       cwd: SCRIPTDIR,
+      shell: true,
     }
   );
 
@@ -400,10 +411,9 @@ export async function installPackage(name: string) {
 
 export async function editScript(path: string) {
   access(join(SCRIPTDIR, path), constants.R_OK);
-  spawn((await getConfig('editor')) || 'code', [join(SCRIPTDIR, path)]).on(
-    'error',
-    () => {}
-  );
+  spawn((await getConfig('editor')) || 'code', [join(SCRIPTDIR, path)], {
+    shell: true,
+  }).on('error', () => {});
 }
 
 export async function importScriptFromFs(): Promise<string | undefined> {
@@ -425,6 +435,12 @@ export async function importScriptFromFs(): Promise<string | undefined> {
   if (existsSync(join(SCRIPTDIR, filename))) return;
   await cp(file, join(SCRIPTDIR, filename));
   editScript(filename);
+}
+
+export async function textareaSubmit(value: string | null | undefined) {
+  for (const p of Object.values(processes))
+    if (!p.killed && typeof p.exitCode !== 'number')
+      p.send({ pid: p.pid, channel: channels.TEXTAREA, value });
 }
 
 function transform(file: string) {

@@ -26,6 +26,7 @@ import Window from './window';
 import { KbdList } from './kbd';
 import Drop from './drop';
 import New from './new';
+import Textarea from './Textarea';
 
 let i = 0;
 
@@ -69,7 +70,7 @@ interface LoaderData {
 let $setULoaderData = (
   value: LoaderData | ((data: LoaderData) => LoaderData)
 ) => {};
-let $setLoaderData = (
+export let $setLoaderData = (
   value: LoaderData | ((data: LoaderData) => LoaderData)
 ) => {};
 export function resetLoader() {
@@ -88,6 +89,7 @@ let $setDrop = (value: boolean) => {};
 let $setUTabs = (tabs: UTab[]) => {};
 export let $setCode = (code: string) => {};
 let $setSelectedTab = (name: string) => {};
+let $setTextarea = (name: string) => {};
 
 const App = () => {
   useEffect(() => {
@@ -120,6 +122,7 @@ const App = () => {
   const [argOpt, setArgOpt] = useState<{
     name: string;
     options?: (string | ArgOption)[];
+    hint?: string;
   }>({ name: '' });
   const [errProps, setErrProps] = useState<{ name: string; error: string }>({
     error: '',
@@ -140,6 +143,7 @@ const App = () => {
     name: '',
     open: false,
   });
+  const [textarea, setTextarea] = useState('');
   const titleRef = useRef<HTMLDivElement>(null);
   loaderIsRunning = loaderData.open;
   $setULoaderData = setULoader;
@@ -149,6 +153,7 @@ const App = () => {
     uTabData.enabled
       ? setUTabData((data) => ({ ...data, selected: name }))
       : null;
+  $setTextarea = setTextarea;
 
   $setUTabs = (tabs) =>
     tabs.length > 0
@@ -289,11 +294,12 @@ const App = () => {
       API.addEventListener('color-change', reloadColors),
       API.addEventListener(
         'arg-open',
-        (ev, name: string, options?: (string | ArgOption)[]) => {
+        (ev, name: string, options?: (string | ArgOption)[], hint?: string) => {
           setArgMode(true);
           setArgOpt({
             name,
             options,
+            hint,
           });
         }
       ),
@@ -320,6 +326,11 @@ const App = () => {
       ),
       API.addEventListener('drop', () => $setDrop(true)),
       API.addEventListener('drop-end', () => $setDrop(false)),
+
+      API.addEventListener('textarea', (ev, name: string) =>
+        $setTextarea(name)
+      ),
+      API.addEventListener('textarea-end', () => $setTextarea('')),
     ];
     return () => a.forEach((el) => el());
   }, []);
@@ -411,7 +422,8 @@ const App = () => {
     errMode ||
     code.length > 0 ||
     (uTabData.enabled && uTabData.names.length > 0) ||
-    dropMode;
+    dropMode ||
+    textarea.length > 0;
 
   useEffect(() => {
     if (!(hasScriptFunctionality || uLoader.open) && i > 0) API.hideWindow();
@@ -439,7 +451,7 @@ const App = () => {
       />
       <div className="pagetitle drag-area" ref={titleRef}>
         <p>
-          {!hasScriptFunctionality
+          {!hasScriptFunctionality || !loaderIsRunning
             ? tabs.find((el) => el.id === tab)?.name
             : loaderData.name}
         </p>
@@ -487,6 +499,7 @@ const App = () => {
         {errMode && <ErrorElement {...props} {...errProps} />}
         {argMode && !errMode && <Question {...props} {...argOpt} />}
         {dropMode && <Drop {...props} />}
+        {textarea.length > 0 && <Textarea {...props} name={textarea} />}
         {(code.length > 0 || (uTabData.enabled && uTabData.names.length > 0)) &&
           !argMode &&
           !errMode && <Window {...props} code={code} />}

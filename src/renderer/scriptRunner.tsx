@@ -100,7 +100,7 @@ export default function ScriptSearch(props: DefaultViewProps) {
   $runScript = () => {
     props.config.setSearch('');
     if (filteredFiles[selected]) {
-      runScript(filteredFiles[selected].path);
+      if (!filteredFiles[selected].path.endsWith('.module.ts')) runScript(filteredFiles[selected].path);
     } else if (
       search &&
       !(typeof files !== 'object'
@@ -126,21 +126,26 @@ export default function ScriptSearch(props: DefaultViewProps) {
         name: 'Delete',
         description:
           'Delete "' +
-          filteredFiles[selected].name +
+          (filteredFiles[selected].name || filteredFiles[selected].path) +
           '". You won\'t be able to recover it.',
         image: icons.trash,
       },
       {
         key: 'rename',
         name: 'Rename',
-        description: 'Rename "' + filteredFiles[selected].name + '"',
+        description:
+          'Rename "' +
+          (filteredFiles[selected].name || filteredFiles[selected].path) +
+          '"',
         image: icons.pen,
       },
       {
         key: 'publish',
         name: 'Publish to a github gist',
         description:
-          'Publish "' + filteredFiles[selected].name + '" to a github gist',
+          'Publish "' +
+          (filteredFiles[selected].name || filteredFiles[selected].path) +
+          '" to a github gist',
         image: icons.github,
       },
     ]).catch(() => {});
@@ -168,7 +173,9 @@ export default function ScriptSearch(props: DefaultViewProps) {
         API.open('https://github.com/settings/tokens/new');
         try {
           token = await API.arg(
-            'Please input a legacy github token with the gist permission!'
+            'Please input a legacy github token with the gist permission!',
+            undefined,
+            '<p>Grab one from <a href="https://github.com/settings/tokens/new">here</a>'
           );
           if (!token) return API.arg('Error: No token specified!');
           API.setConfig('githubToken', token);
@@ -211,7 +218,9 @@ export default function ScriptSearch(props: DefaultViewProps) {
         API.open('https://github.com/settings/tokens/new');
         try {
           token = await API.arg(
-            'Please input a legacy github token with gist permission!'
+            'Please input a legacy github token with gist permission!',
+            undefined,
+            '<p>Grab one from <a href="https://github.com/settings/tokens/new">here</a>'
           );
           API.setConfig('githubToken', token);
 
@@ -336,7 +345,11 @@ export default function ScriptSearch(props: DefaultViewProps) {
                     ref={selected === i ? selectedRef : undefined}
                     key={el.path}
                     className={`script-entry ${selected === i && 'selected'}`}
-                    onClick={() => runScript(el.path)}
+                    onClick={
+                      el.path.endsWith('.module.ts')
+                        ? undefined
+                        : () => runScript(el.path)
+                    }
                     onMouseOver={() => (selected === i ? null : setSelected(i))}
                   >
                     <div className="script-name">{el.name || el.path}</div>
@@ -365,50 +378,69 @@ export default function ScriptSearch(props: DefaultViewProps) {
           )}
         </ScrollArea>
       </div>
-      <div className="details">
-        {filteredFiles[selected] && (
+      {filteredFiles[selected] && (
+        <div className="details">
           <ScrollArea>
-            <p className="d-name">
-              <span className="name">Name</span>:{' '}
-              <span className="value">{filteredFiles[selected].name}</span>
-            </p>
-            <p className="d-description">
-              <span className="name">Description</span>:{' '}
-              <span className="value">
-                {filteredFiles[selected].description}
-              </span>
-            </p>
-            <p className="d-author">
-              <span className="name">Author</span>:{' '}
-              <span className="value">
-                {filteredFiles[selected].githubName ? (
-                  <Username
-                    name={filteredFiles[selected].author}
-                    link={
-                      'https://github.com/' + filteredFiles[selected].githubName
-                    }
-                  />
-                ) : filteredFiles[selected].twitterName ? (
-                  <Username
-                    name={filteredFiles[selected].author}
-                    link={
-                      'https://twitter.com/' +
-                      filteredFiles[selected].twitterName
-                    }
-                  />
-                ) : filteredFiles[selected].youtubeName ? (
-                  <Username
-                    name={filteredFiles[selected].author}
-                    link={
-                      'https://youtube.com/' +
-                      filteredFiles[selected].youtubeName
-                    }
-                  />
-                ) : (
-                  filteredFiles[selected].author
-                )}
-              </span>
-            </p>
+            {!filteredFiles[selected]?.path.endsWith('.module.ts') &&
+              filteredFiles[selected] && (
+                <>
+                  <p className="d-name">
+                    <span className="name">Name</span>:{' '}
+                    <span className="value">
+                      {filteredFiles[selected].name}
+                    </span>
+                  </p>
+                  <p className="d-description">
+                    <span className="name">Description</span>:{' '}
+                    <span className="value">
+                      {filteredFiles[selected].description}
+                    </span>
+                  </p>
+                  <p className="d-author">
+                    <span className="name">Author</span>:{' '}
+                    <span className="value">
+                      {filteredFiles[selected].githubName ? (
+                        <Username
+                          name={filteredFiles[selected].author}
+                          link={
+                            'https://github.com/' +
+                            filteredFiles[selected].githubName
+                          }
+                        />
+                      ) : filteredFiles[selected].twitterName ? (
+                        <Username
+                          name={filteredFiles[selected].author}
+                          link={
+                            'https://twitter.com/' +
+                            filteredFiles[selected].twitterName
+                          }
+                        />
+                      ) : filteredFiles[selected].youtubeName ? (
+                        <Username
+                          name={filteredFiles[selected].author}
+                          link={
+                            'https://youtube.com/' +
+                            filteredFiles[selected].youtubeName
+                          }
+                        />
+                      ) : (
+                        filteredFiles[selected].author
+                      )}
+                    </span>
+                  </p>
+                  {filteredFiles[selected].uses.filter((el) => !!el).length >
+                    0 && (
+                    <p className="d-uses">
+                      <span className="name">Uses</span>:{' '}
+                      <span className="value">
+                        {filteredFiles[selected].uses
+                          .filter((el) => !!el)
+                          .join(', ')}
+                      </span>
+                    </p>
+                  )}
+                </>
+              )}
             <div className="filename">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -439,8 +471,8 @@ export default function ScriptSearch(props: DefaultViewProps) {
             </div>
             <CodeHighlight code={scriptContents} />
           </ScrollArea>
-        )}
-      </div>
+        </div>
+      )}
     </>
   );
 }

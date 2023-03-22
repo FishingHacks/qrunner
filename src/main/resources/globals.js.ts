@@ -1,5 +1,4 @@
 export default `#!/bin/env node
-
 function lazyRequire(name) {
     let obj;
 
@@ -10,7 +9,6 @@ function lazyRequire(name) {
         },
     };
 }
-
 /**
  * @type {{get(): typeof import('fs')}}
  */
@@ -19,6 +17,7 @@ const syncFs = lazyRequire('fs');
  * @type {{get(): typeof import('fs/promises')}}
  */
 const promiseFs = lazyRequire('fs/promises');
+const { rejects } = require('assert');
 const { spawn: $spawn, spawnSync } = require('child_process');
 /**
  * @type {{get(): typeof import('os')}}
@@ -37,6 +36,10 @@ const marked = lazyRequire('marked');
  * @type {{get(): typeof import('highlight.js')}}
  */
 const highlightjs = lazyRequire('highlight.js');
+/**
+ * @type {{get(): typeof import('crypto')}}
+ */
+const crypto = lazyRequire('crpyto');
 
 const channels = {
     OPEN: 0,
@@ -63,13 +66,17 @@ const channels = {
     CLOSE_WIDGET: 21,
     START_DRAG: 22,
     RUN_IN_EDITOR: 23,
+    TEXTAREA: 24,
 };
 
 function spawnPromise(command, args) {
     return new Promise((res, rej) => {
         const data = [];
 
-        const spawned = $spawn(command, args);
+        const spawned = $spawn(command, args, {
+            shell: true,
+            cwd: process.cwd(),
+        });
         function done(code) {
             return res({
                 out: Buffer.from(data),
@@ -96,13 +103,14 @@ async function $getPackageManager() {
 const promises = [];
 
 const packageDir = process.cwd();
-const scriptName = ((str) => str.substring(0, str.length - 3))(
+const scriptName = ((str) => str.substring(0, str.length - 4))(
     process.argv[2].split('/').pop()
 );
 
 const envFile = join(packageDir, '../' + scriptName + '.env.json');
 const dbFile = join(packageDir, '../' + scriptName + '.db.json');
 const logDir = join(packageDir, '../log');
+const tmpDir = join(packageDir, '../tmp');
 
 const noop = () => {};
 
@@ -159,7 +167,11 @@ function notify(title, name) {
     if (!title) throw new Error('No title specified');
     const p = os.get().platform();
     if (p === 'linux') {
-        $spawn('notify-send', [title, name], { detached: true });
+        $spawn('notify-send', [title, name], {
+            detached: true,
+            shell: true,
+            cwd: fs.getCwd(),
+        });
     } else throw new Error('notify is only supported on linux');
 }
 
@@ -240,7 +252,7 @@ const fs = {
 };
 
 function $(command) {
-    const spawned = spawn(command, {
+    const spawned = $spawn(command, {
         shell: true,
         cwd: fs.getCwd(),
         detached: true,
@@ -307,7 +319,9 @@ async function npm(path) {
         const { stop } = loader('Installing ' + path);
         if (!packageManager) await Promise.allSettled(promises);
         const installArg = packageManager === 'yarn' ? 'add' : 'install';
-        const spawned = spawnSync(packageManager, [installArg, path]);
+        const spawned = spawnSync(packageManager, [installArg, path], {
+            shell: true,
+        });
         stop(
             spawned.error || spawned.status !== 0
                 ? 'Failed to install ' + path
@@ -322,6 +336,7 @@ async function npm(path) {
                     .map((el) => el.toString())
                     .join('')
             );
+        spawned.output.forEach((el) => (!el ? null : process.stdout.write(el)));
     }
 
     const mod = require(path);
@@ -374,7 +389,7 @@ function logToFile(level, ...args) {
         .get()
         .appendFile(
             logFile,
-            \`[\${now.getHours()}:\${now.getMinutes()}:\${now.getSeconds()}] [\${level.toUpperCase()}]: \${message}\n\`
+            \`[\${now.getHours()}:\${now.getMinutes()}:\${now.getSeconds()}] [\${level.toUpperCase()}]: \${message}\\n\`
         );
 }
 
@@ -385,7 +400,7 @@ function logToFileSync(level, ...args) {
         .get()
         .appendFileSync(
             logFile,
-            \`[\${now.getHours()}:\${now.getMinutes()}:\${now.getSeconds()}] [\${level.toUpperCase()}]: \${message}\n\`
+            \`[\${now.getHours()}:\${now.getMinutes()}:\${now.getSeconds()}] [\${level.toUpperCase()}]: \${message}\\n\`
         );
 }
 
@@ -452,11 +467,12 @@ function uiChange() {
 }
 
 let i = 3;
-async function arg(name, options, autocomplete) {
+async function arg(name, options, autocomplete, hint) {
     if (process.argv[i]) return process.argv[i++];
     return new Promise((res, rej) => {
         uiChange();
         callWhenUiChange.push(rej);
+        callWhenUiChange.push(() => process.off('message', onAutoComplete));
         async function onAutoComplete(data) {
             if (
                 !data ||
@@ -468,12 +484,12 @@ async function arg(name, options, autocomplete) {
                 return;
             const result = await (autocomplete || (() => {}))(data.key);
 
-            if (typeof result !== 'string')
+            if (typeof result !== 'string' && result !== undefined)
                 throw new TypeError(
-                    'Expeced result of autocomplete(...) to be string, but found ' +
+                    'Expected result of autocomplete(...) to be string or undefined, but found ' +
                         typeof result
                 );
-            return send(channels.SET_PREVIEW, { data: result, key: data.key });
+            return send(channels.SET_PREVIEW, { data: result, key: data.key, hint });
         }
         process.on('message', onAutoComplete);
         sendWithResponse(channels.ARG, { name, options }).then((obj) => {
@@ -498,18 +514,32 @@ function _spawn(name, args, options = {}) {
         ...(options || {}),
         detached: true,
         cwd: fs.getCwd(),
+        shell: true,
     });
 }
 
 function md(markdown) {
-    marked.get().marked.setOptions({ highlight, renderer: new (marked.get().Renderer)(), });
+    marked.get().marked.setOptions({
+        highlight(code, language) {
+            if (!language) return highlightjs.get().highlightAuto(code).value;
+            return highlightjs.get().highlight(code, { language }).value;
+        },
+        renderer: new (marked.get().Renderer)(),
+        langPrefix: 'hljs light language-', // highlight.js css expects a top-level 'hljs' class.
+        pedantic: false,
+        gfm: true,
+        breaks: false,
+        sanitize: false,
+        smartypants: false,
+        xhtml: false,
+    });
 
     return marked.get().parse(markdown);
 }
 
 function highlight(code, language) {
     language ||= 'typescript';
-    if (!highlightjs.get().getLanguage(language)) language = 'plaintext'
+    if (!highlightjs.get().getLanguage(language)) language = 'plaintext';
     return (
         '<pre class="hljs light"><code class="hljs">' +
         highlightjs.get().highlight(code, { language }).value +
@@ -662,10 +692,6 @@ function drop() {
     });
 }
 
-function edit(path) {
-    send(channels.RUN_IN_EDITOR, { file: path })
-}
-
 function onEvent(name, cb) {
     function listen(data) {
         if (typeof data !== 'object' || !data) return;
@@ -674,12 +700,13 @@ function onEvent(name, cb) {
             typeof data.event !== 'string' ||
             typeof data.args !== 'object' ||
             !data.args ||
-            !(data.args instanceof Array)
+            !(data.args instanceof Array) ||
+            data.event !== name
         )
             return;
         if (typeof data.widgetId !== 'string' && data.widgetId !== undefined)
             return;
-        cb(data.event, data.widgetId, data.args);
+        cb(data.widgetId, data.args);
     }
     process.on('message', listen);
     return () => process.off('message', listen);
@@ -691,6 +718,32 @@ function closeWidget(widgetId) {
 
 function startDrag(file) {
     send(channels.START_DRAG, { file });
+}
+
+function edit(path) {
+    send(channels.RUN_IN_EDITOR, { file: path });
+}
+
+function textarea(name) {
+    uiChange();
+    return new Promise((res, rej) => {
+        callWhenUiChange.push(() => rej(new Error('UI Changed')));
+        sendWithResponse(channels.TEXTAREA, { name }).then((value) =>
+            value && typeof value === 'object' && value.value
+                ? res(value.value)
+                : rej(new Error('User exited'))
+        );
+    });
+}
+
+function tmp(content, name, extension) {
+    if (!name || typeof name !== 'string') {
+        const now = new Date();
+        name = \`\${now.getDay()}-\${now.getMonth()+1}-\${now.getFullYear()}-\${now.getHours()}-\${now.getMinutes()}\`;
+    }
+    const file = join(tmpDir, name.toString() + crypto.get().randomUUID() + '.' + (extension?.toString() || 'txt'));
+    syncFs.get().writeFileSync(file, content?.toString() || '');
+    return file;
 }
 
 globalThis.API = {};
@@ -752,6 +805,8 @@ expose('edit', edit);
 expose('onEvent', onEvent);
 expose('closeWidget', closeWidget);
 expose('startDrag', startDrag);
+expose('textarea', textarea);
+expose('tmp', tmp);
 
 process.on('uncaughtException', (err) => {
     console.error('Unhandled Exeption!');

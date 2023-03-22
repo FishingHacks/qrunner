@@ -7,7 +7,7 @@ let $setDetails = (k: string | undefined) => {};
 let $currentKey: string | undefined;
 
 export default function Question(
-  props: DefaultViewProps & { name: string; options?: (string | ArgOption)[] }
+  props: DefaultViewProps & { name: string; options?: (string | ArgOption)[], hint?: string }
 ) {
   const options = props.options || [];
   props.config.disableBar = true;
@@ -106,6 +106,7 @@ export default function Question(
     <>
       <div className={'options ' + (details && 'withDetails')}>
         <ScrollArea>
+          {props.hint && <div className="hint" dangerouslySetInnerHTML={{ __html: props.hint }} />}
           {filteredOptions.slice(0, 100).map((el, i) => {
             return (
               <div

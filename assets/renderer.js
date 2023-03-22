@@ -31,8 +31,8 @@ const api = {
     respond(string) {
         ipcRenderer.send('respond', string);
     },
-    arg(name, options) {
-        return ipcRenderer.invoke('arg', name, options);
+    arg(name, options, hint) {
+        return ipcRenderer.invoke('arg', name, options, hint);
     },
     getProcs() {
         return ipcRenderer.invoke('get-processes');
@@ -132,6 +132,9 @@ const api = {
     },
     importFileFromComputer() {
         return ipcRenderer.invoke('import-file-from-fs');
+    },
+    submitTextarea(value) {
+        return ipcRenderer.invoke('textarea-submit', value);
     },
     addEventListener(name, cb) {
         ipcRenderer.on(name, cb);
