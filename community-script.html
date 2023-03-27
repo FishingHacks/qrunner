@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>qRunner</title>
+        <link rel="stylesheet" href="styles.css" />
+        <link rel="stylesheet" href="dracula.css" />
+        <script type="module">
+            import hljs from './hljs.js';
+            try {
+                const script = new URL(location).searchParams.get('script');
+                if (!script) window.location.pathname = '/';
+
+                window.addEventListener('load', () => {
+                    import(
+                        window.location.origin + '/scripts/' + script + '.js'
+                    )
+                        .then(({ s_id, s_name, s_gh, s_tw, s_yt }) => {
+                            fetch(
+                                'https://api.github.com/gists/' +
+                                    encodeURIComponent(s_id)
+                            )
+                                .then((req) => req.json())
+                                .then((res) => {
+                                    const script = Object.values(res.files)[0]
+                                        ?.content;
+                                    if (!script)
+                                        document.getElementsByClassName(
+                                            'language-typescript'
+                                        )[0].textContent = 'Error';
+                                    else {
+                                        document.getElementsByClassName(
+                                            'language-typescript'
+                                        )[0].textContent = script;
+                                        hljs.highlightAll();
+                                    }
+                                    document.getElementsByClassName(
+                                        'cs-description'
+                                    )[0].textContent = res.description;
+
+                                    const st =
+                                        document.getElementsByClassName(
+                                            'cs-subtitle'
+                                        )[0];
+                                    st.textContent = '';
+                                    if (s_gh) {
+                                        const a = document.createElement('a');
+                                        a.classList.add('link');
+                                        a.href = `https://github.com/${encodeURIComponent(
+                                            s_gh
+                                        )}`;
+                                        a.target = '_blank';
+                                        a.append(
+                                            document.createTextNode(
+                                                res.owner.login
+                                            )
+                                        );
+                                        st.append(
+                                            document.createTextNode('By '),
+                                            a
+                                        );
+                                    } else if (s_tw) {
+                                        const a = document.createElement('a');
+                                        a.classList.add('link');
+                                        a.href = `https://twitter.com/${encodeURIComponent(
+                                            s_tw
+                                        )}`;
+                                        a.target = '_blank';
+                                        a.append(
+                                            document.createTextNode(
+                                                res.owner.login
+                                            )
+                                        );
+                                        st.append(
+                                            document.createTextNode('By '),
+                                            a
+                                        );
+                                    } else if (s_yt) {
+                                        const a = document.createElement('a');
+                                        a.classList.add('link');
+                                        a.href = `https://youtube.com/${encodeURIComponent(
+                                            s_yt
+                                        )}`;
+                                        a.target = '_blank';
+                                        a.append(
+                                            document.createTextNode(
+                                                res.owner.login
+                                            )
+                                        );
+                                        st.append(
+                                            document.createTextNode('By '),
+                                            a
+                                        );
+                                    } else {
+                                        st.append(
+                                            document.createTextNode(
+                                                'By ' + res.owner.login
+                                            )
+                                        );
+                                    }
+                                });
+
+                            for (const i of document.getElementsByClassName(
+                                'cs-install-button'
+                            ))
+                                i.addEventListener('click', () =>
+                                    fetch(
+                                        'http://localhost:1205/add-script?script=' +
+                                            encodeURIComponent(s_id)
+                                    )
+                                );
+
+                            document.getElementsByClassName(
+                                'cs-title'
+                            )[0].textContent = s_name;
+                            document.getElementsByClassName(
+                                'cs-menutitle'
+                            )[0].textContent = 'qRunner | ' + s_name;
+                            document.title = 'qRunner | ' + s_name;
+                        })
+                        .catch(() => (window.location.pathname = '/'));
+                });
+            } catch {
+                window.location.pathname = '/';
+            }
+        </script>
+    </head>
+    <body>
+        <nav>
+            <a href="/" class="navlink">Home</a>
+            <a href="/docs" class="navlink">Docs</a>
+            <a href="/#download" class="navlink">Download</a>
+            <a href="/community" class="navlink">Community Scripts</a>
+            <a href="/guide" class="navlink">Guide</a>
+            <div style="flex-grow: 1"></div>
+            <p
+                style="
+                    justify-self: flex-end;
+                    color: var(--color-secondary);
+                    font-weight: bold;
+                    margin: 0px;
+                "
+                class="cs-menutitle"
+            >
+                qRunner | loading
+            </p>
+        </nav>
+
+        <div class="page">
+            <h1 class="cs-title">loading</h1>
+            <h3 class="cs-subtitle">By loading</h3>
+
+            <p class="cs-description">loading</p>
+
+            <div class="cs-button cs-install-button">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    stroke-width="2"
+                    stroke="currentColor"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path
+                        d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z"
+                        stroke-width="0"
+                        fill="currentColor"
+                    ></path>
+                </svg>
+                Install
+            </div>
+
+            <pre
+                class="cs-code"
+            ><code class="language-typescript">Loading...</code></pre>
+        </div>
+
+        <div class="subbar">
+            <p style="cursor: pointer" onclick="location.reload();">
+                <kbd>F5</kbd>: Reload
+            </p>
+            <p><kbd>Alt</kbd> + <kbd>F4</kbd>: Quit</p>
+            <p><kbd>↑</kbd>: Move up</p>
+            <p><kbd>↓</kbd>: Move down</p>
+        </div>
+        <div style="width: 100%; height: 45px"></div>
+    </body>
+</html>
