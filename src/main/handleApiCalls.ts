@@ -44,6 +44,7 @@ export const channels = {
   START_DRAG: 22,
   RUN_IN_EDITOR: 23,
   TEXTAREA: 24,
+  KILL: 25,
 };
 
 export default function handle(

@@ -56,7 +56,7 @@ function paste(): Promise<void>;
 
 ```typescript
 ///file: typedef.d.ts
-copy(from: string, to: string): Promise<void>;
+function copy(from: string, to: string): Promise<void>;
 ```
 
 > Copy a file
@@ -69,7 +69,7 @@ copy(from: string, to: string): Promise<void>;
 
 ```typescript
 ///file: typedef.d.ts
-move(from: string, to: string): Promise<void>;
+function move(from: string, to: string): Promise<void>;
 ```
 
 > Move a file
@@ -82,7 +82,7 @@ move(from: string, to: string): Promise<void>;
 
 ```typescript
 ///file: typedef.d.ts
-link(from: string, to: string): Promise<void>;
+function link(from: string, to: string): Promise<void>;
 ```
 
 > Create a symbolic link
@@ -95,7 +95,7 @@ link(from: string, to: string): Promise<void>;
 
 ```typescript
 ///file: typedef.d.ts
-listDir(dir: string): Promise<string[]>;
+function listDir(dir: string): Promise<string[]>;
 ```
 
 > List the contents of a specified Directory
@@ -108,7 +108,33 @@ listDir(dir: string): Promise<string[]>;
 
 ```typescript
 ///file: typedef.d.ts
-removeFile(path: string): Promise<void>;
+function removeFile(path: string): Promise<void>;
+```
+
+> Remove a File
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## fs.removeDir
+
+```typescript
+///file: typedef.d.ts
+function removeDir(path: string): Promise<void>;
+```
+
+> Remove a Folder
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## fs.delete
+
+```typescript
+///file: typedef.d.ts
+function delete(path: string): Promise<void>;
 ```
 
 > Remove a File or Folder
@@ -121,7 +147,7 @@ removeFile(path: string): Promise<void>;
 
 ```typescript
 ///file: typedef.d.ts
-createDir(path: string): Promise<void>;
+function createDir(path: string): Promise<void>;
 ```
 
 > Create a Folder
@@ -134,7 +160,7 @@ createDir(path: string): Promise<void>;
 
 ```typescript
 ///file: typedef.d.ts
-isFile(path: string): Promise<boolean>;
+function isFile(path: string): Promise<boolean>;
 ```
 
 > **Supports**: Linux Windows MacOS
@@ -145,7 +171,7 @@ isFile(path: string): Promise<boolean>;
 
 ```typescript
 ///file: typedef.d.ts
-isDir(path: string): Promise<boolean>;
+function isDir(path: string): Promise<boolean>;
 ```
 
 > Check if a path points to an Directory
@@ -222,7 +248,7 @@ function findFiles(path: string, options: FileFinderOptions): Promise<string[]>;
 
 ```typescript
 ///file: typedef.d.ts
-getCwd(): string;
+function getCwd(): string;
 ```
 
 > Get the current working directory
@@ -235,7 +261,7 @@ getCwd(): string;
 
 ```typescript
 ///file: typedef.d.ts
-copySync(from: string, to: string): void;
+function copySync(from: string, to: string): void;
 ```
 
 > Copy a file synchronously
@@ -248,7 +274,7 @@ copySync(from: string, to: string): void;
 
 ```typescript
 ///file: typedef.d.ts
-moveSync(from: string, to: string): void;
+function moveSync(from: string, to: string): void;
 ```
 
 > Move a file synchronously
@@ -261,7 +287,7 @@ moveSync(from: string, to: string): void;
 
 ```typescript
 ///file: typedef.d.ts
-linkSync(from: string, to: string): void;
+function linkSync(from: string, to: string): void;
 ```
 
 > Create a Symbolic Link synchronously
@@ -274,7 +300,7 @@ linkSync(from: string, to: string): void;
 
 ```typescript
 ///file: typedef.d.ts
-listDirSync(dir: string): string[];
+function listDirSync(dir: string): string[];
 ```
 
 > List a Directory synchronously
@@ -287,10 +313,36 @@ listDirSync(dir: string): string[];
 
 ```typescript
 ///file: typedef.d.ts
-removeFileSync(path: string): void;
+function removeFileSync(path: string): void;
 ```
 
-> Delete a File or Folder synchronously
+> Delete a File synchronously
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## fs.removeDirSync
+
+```typescript
+///file: typedef.d.ts
+function removeDirSync(path: string): void;
+```
+
+> Remove a Folder synchronously
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## fs.deleteSync
+
+```typescript
+///file: typedef.d.ts
+function deleteSync(path: string): void;
+```
+
+> Remove a File or Folder synchronously
 >
 > **Supports**: Linux Windows MacOS
 
@@ -300,7 +352,7 @@ removeFileSync(path: string): void;
 
 ```typescript
 ///file: typedef.d.ts
-createDirSync(path: string): void;
+function createDirSync(path: string): void;
 ```
 
 > Create a Directory synchronously
@@ -313,7 +365,7 @@ createDirSync(path: string): void;
 
 ```typescript
 ///file: typedef.d.ts
-isFileSync(path: string): boolean;
+function isFileSync(path: string): boolean;
 ```
 
 > Check if a path points to a file synchronously
@@ -326,7 +378,7 @@ isFileSync(path: string): boolean;
 
 ```typescript
 ///file: typedef.d.ts
-isDirSync(path: string): boolean;
+function isDirSync(path: string): boolean;
 ```
 
 > Check if a path points to a folder synchronously

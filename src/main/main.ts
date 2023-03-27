@@ -137,12 +137,12 @@ export function log(
 
 export const runner = (() => {
   // if (!spawnSync('tsx', ['-v']).error) return 'tsx'; // error: TSX doesn't work with IPC connections, see https://github.com/esbuild-kit/tsx/issues/201
-  if (!spawnSync('ts-node', ['-v'], { shell: true }).error) return 'ts-node';
   if (
     !spawnSync(PATCHED_TSX_PATH, ['-v'], { shell: true }).error &&
     PATCHED_TSX_PATH
   )
     return PATCHED_TSX_PATH;
+  if (!spawnSync('ts-node', ['-v'], { shell: true }).error) return 'ts-node';
   // todo: node & tsc
 
   console.error(

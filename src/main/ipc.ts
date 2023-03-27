@@ -140,7 +140,7 @@ export async function setSelectedTab(name: string) {
 }
 export function kill(pid: number) {
   if (!processes[pid]) return;
-  if (!processes[pid].killed) processes[pid].kill();
+  processes[pid]?.kill();
   log(
     'info',
     'script helper',

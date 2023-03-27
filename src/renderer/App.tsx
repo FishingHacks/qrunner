@@ -271,6 +271,10 @@ const App = () => {
         inputRef.current?.focus();
         return e.preventDefault();
       }
+      if (e.key === 'F1') {
+        API.open('https://github.com/FishingHacks/qrunner/wiki');
+        API.hideWindow();
+      }
 
       if (e.key === 'k' && e.ctrlKey) {
         API.getProcs().then((procs) =>
@@ -526,6 +530,15 @@ const App = () => {
         {footer.map((el, i) => (
           <div key={'footer-' + i}>{el}</div>
         ))}
+        <div>
+          <a
+            href="https://github.com/FishingHacks/qrunner/wiki"
+            className="link"
+            onClick={API.hideWindow}
+          >
+            <KbdList keys={[ 'f1' ]} />: Get Help
+          </a>
+        </div>
       </div>
       <div className="loader-container">
         <div
