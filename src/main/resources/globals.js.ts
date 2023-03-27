@@ -184,6 +184,40 @@ const clipboard = {
     },
 };
 
+async function tree(path) {
+    const { readdir, lstat } = promiseFs.get();
+    if (!(await lstat(path)).isDirectory()) return [];
+    const dirs = [path];
+    const files = [];
+
+    while (dirs.length > 0) {
+        const dir = dirs.pop();
+        for (const f of await readdir(dir, { withFileTypes: true })) {
+            if (f.isFile()) files.push(join(dir, f.name));
+            else if (f.isDirectory()) dirs.push(join(dir, f.name));
+        }
+    }
+
+    return files;
+}
+
+function treeSync(path) {
+    const { readdirSync, lstatSync } = syncFs.get();
+    if (!lstatSync(path).isDirectory()) return [];
+    const dirs = [path];
+    const files = [];
+
+    while (dirs.length > 0) {
+        const dir = dirs.pop();
+        for (const f of readdirSync(dir, { withFileTypes: true })) {
+            if (f.isFile()) files.push(join(dir, f.name));
+            else if (f.isDirectory()) dirs.push(join(dir, f.name));
+        }
+    }
+
+    return files;
+}
+
 const fs = {
     copy(from, to) {
         return promiseFs.get().copyFile(from, to);
@@ -203,6 +237,12 @@ const fs = {
     removeFile(path) {
         return promiseFs.get().rm(path);
     },
+    removeDir(path) {
+        return promiseFs.get().rm(path, { recursive: true });
+    },
+    delete(path) {
+        return promiseFs.get().rm(path, { recursive: true });
+    },
     createDir(path) {
         return promiseFs
             .get()
@@ -221,9 +261,50 @@ const fs = {
             .lstat(path)
             .then((stat) => stat.isDirectory());
     },
+    async ensureDir(path) {
+        try {
+            await promiseFs.get().access(path, promiseFs.get().constants.R_OK);
+        } catch {
+            await promiseFs.get().mkdir(path, { recursive: true });
+        }
+    },
+    async ensureFile(path, contents) {
+        try {
+            await promiseFs
+                .get()
+                .access(
+                    path,
+                    promiseFs.get().constants.R_OK |
+                        promiseFs.get().constants.W_OK
+                );
+        } catch {
+            await promiseFs.get().writeFile(path, contents);
+        }
+    },
+    tree,
+    async findFiles(dir, options) {
+        if (Object.keys(options).length < 1) return;
+        const files = await tree(dir);
+        return files.filter((el) => {
+            const f = el.split(sep).pop() || '';
+            const ext = f.split('.').pop() || '';
+            const name = f.split('.').slice(0, -1).join('.');
+            if (options.extensions && !options.extensions.includes(ext))
+                return false;
+            if (options.extension && !options.extension !== ext) return false;
+            if (options.filenames && !options.filenames.includes(name))
+                return false;
+            if (options.filename && !options.filename !== name) return false;
+            if (options.validate) return options.validate(name, ext, f, el);
+
+            return false;
+        });
+    },
+
     getCwd() {
         return process.cwd();
     },
+
     copySync(from, to) {
         return syncFs.get().copyFileSync(from, to);
     },
@@ -240,6 +321,12 @@ const fs = {
     removeFileSync(path) {
         return syncFs.get().rmSync(path);
     },
+    removeDirSync(path) {
+        return syncFs.get().rmSync(path, { recursive: true });
+    },
+    deleteSync(path) {
+        return syncFs.get().rmSync(path, { recursive: true });
+    },
     createDirSync(path) {
         return syncFs.get().mkdirSync(path, { recursive: true });
     },
@@ -248,6 +335,34 @@ const fs = {
     },
     isDirSync(path) {
         return syncFs.get().lstatSync(path).isDirectory();
+    },
+
+    ensureDirSync(path) {
+        if (!syncFs.get().existsSync(path))
+            syncFs.get().mkdirSync(path, { recursive: true });
+    },
+    ensureFileSync(path, contents) {
+        if (!syncFs.get().existsSync(path))
+            syncFs.get().writeFileSync(path, contents);
+    },
+    treeSync,
+    async findFilesSync(dir, options) {
+        if (Object.keys(options).length < 1) return;
+        const files = treeSync(dir);
+        return files.filter((el) => {
+            const f = el.split(sep).pop() || '';
+            const ext = f.split('.').pop() || '';
+            const name = f.split('.').slice(0, -1).join('.');
+            if (options.extensions && !options.extensions.includes(ext))
+                return false;
+            if (options.extension && !options.extension !== ext) return false;
+            if (options.filenames && !options.filenames.includes(name))
+                return false;
+            if (options.filename && !options.filename !== name) return false;
+            if (options.validate) return options.validate(name, ext, f);
+
+            return false;
+        });
     },
 };
 
@@ -389,7 +504,7 @@ function logToFile(level, ...args) {
         .get()
         .appendFile(
             logFile,
-            \`[\${now.getHours()}:\${now.getMinutes()}:\${now.getSeconds()}] [\${level.toUpperCase()}]: \${message}\\n\`
+            \`[{now.getHours()}:\${now.getMinutes()}:\${now.getSeconds()}] [\${level.toUpperCase()}]: \${message}\\n\`
         );
 }
 
@@ -489,7 +604,11 @@ async function arg(name, options, autocomplete, hint) {
                     'Expected result of autocomplete(...) to be string or undefined, but found ' +
                         typeof result
                 );
-            return send(channels.SET_PREVIEW, { data: result, key: data.key, hint });
+            return send(channels.SET_PREVIEW, {
+                data: result,
+                key: data.key,
+                hint,
+            });
         }
         process.on('message', onAutoComplete);
         sendWithResponse(channels.ARG, { name, options }).then((obj) => {
@@ -739,9 +858,17 @@ function textarea(name) {
 function tmp(content, name, extension) {
     if (!name || typeof name !== 'string') {
         const now = new Date();
-        name = \`\${now.getDay()}-\${now.getMonth()+1}-\${now.getFullYear()}-\${now.getHours()}-\${now.getMinutes()}\`;
+        name = \`\${now.getDay()}-\${
+            now.getMonth() + 1
+        }-\${now.getFullYear()}-\${now.getHours()}-\${now.getMinutes()}\`;
     }
-    const file = join(tmpDir, name.toString() + crypto.get().randomUUID() + '.' + (extension?.toString() || 'txt'));
+    const file = join(
+        tmpDir,
+        name.toString() +
+            crypto.get().randomUUID() +
+            '.' +
+            (extension?.toString() || 'txt')
+    );
     syncFs.get().writeFileSync(file, content?.toString() || '');
     return file;
 }

@@ -7,6 +7,7 @@ import ScrollArea from './scrollarea';
 import Username from './username';
 import { useAsyncState } from './utils';
 import * as icons from './icons';
+import { KbdList } from './kbd';
 
 function runScript(name: string) {
   if (loaderIsRunning) return;
@@ -43,7 +44,7 @@ export default function ScriptSearch(props: DefaultViewProps) {
     setSelected(filteredFiles.length);
 
   $reloadFiles = () => {
-    API.forceReloadFiles().then(setFiles);
+    API.getScripts().then(setFiles);
     if (filteredFiles[selected])
       API.getScript(filteredFiles[selected].path).then(setScriptContents);
   };
@@ -100,7 +101,8 @@ export default function ScriptSearch(props: DefaultViewProps) {
   $runScript = () => {
     props.config.setSearch('');
     if (filteredFiles[selected]) {
-      if (!filteredFiles[selected].path.endsWith('.module.ts')) runScript(filteredFiles[selected].path);
+      if (!filteredFiles[selected].path.endsWith('.module.ts'))
+        runScript(filteredFiles[selected].path);
     } else if (
       search &&
       !(typeof files !== 'object'
@@ -193,7 +195,8 @@ export default function ScriptSearch(props: DefaultViewProps) {
           body: JSON.stringify({
             public: true,
             files: {
-              [filteredFiles[selected].path.split(/\/\\/g).pop() || 'unknown.ts']: {
+              [filteredFiles[selected].path.split(/\/\\/g).pop() ||
+              'unknown.ts']: {
                 content: await API.getScript(filteredFiles[selected].path),
               },
             },
@@ -233,10 +236,10 @@ export default function ScriptSearch(props: DefaultViewProps) {
             body: JSON.stringify({
               public: true,
               files: {
-                [filteredFiles[selected].path.split(/\/\\/g).pop() || 'unknown.ts']:
-                  {
-                    content: await API.getScript(filteredFiles[selected].path),
-                  },
+                [filteredFiles[selected].path.split(/\/\\/g).pop() ||
+                'unknown.ts']: {
+                  content: await API.getScript(filteredFiles[selected].path),
+                },
               },
               description: filteredFiles[selected].description,
             }),
@@ -275,7 +278,7 @@ export default function ScriptSearch(props: DefaultViewProps) {
 
   useEffect(() => {
     function scriptChange() {
-      API.forceReloadFiles().then(setFiles);
+      API.getScripts().then(setFiles);
       if (filteredFiles[selected])
         API.getScript(filteredFiles[selected].path).then(setScriptContents);
     }
@@ -384,50 +387,56 @@ export default function ScriptSearch(props: DefaultViewProps) {
             {!filteredFiles[selected]?.path.endsWith('.module.ts') &&
               filteredFiles[selected] && (
                 <>
-                  <p className="d-name">
-                    <span className="name">Name</span>:{' '}
-                    <span className="value">
-                      {filteredFiles[selected].name}
-                    </span>
-                  </p>
-                  <p className="d-description">
-                    <span className="name">Description</span>:{' '}
-                    <span className="value">
-                      {filteredFiles[selected].description}
-                    </span>
-                  </p>
-                  <p className="d-author">
-                    <span className="name">Author</span>:{' '}
-                    <span className="value">
-                      {filteredFiles[selected].githubName ? (
-                        <Username
-                          name={filteredFiles[selected].author}
-                          link={
-                            'https://github.com/' +
-                            filteredFiles[selected].githubName
-                          }
-                        />
-                      ) : filteredFiles[selected].twitterName ? (
-                        <Username
-                          name={filteredFiles[selected].author}
-                          link={
-                            'https://twitter.com/' +
-                            filteredFiles[selected].twitterName
-                          }
-                        />
-                      ) : filteredFiles[selected].youtubeName ? (
-                        <Username
-                          name={filteredFiles[selected].author}
-                          link={
-                            'https://youtube.com/' +
-                            filteredFiles[selected].youtubeName
-                          }
-                        />
-                      ) : (
-                        filteredFiles[selected].author
-                      )}
-                    </span>
-                  </p>
+                  {filteredFiles[selected].name && (
+                    <p className="d-name">
+                      <span className="name">Name</span>:{' '}
+                      <span className="value">
+                        {filteredFiles[selected].name}
+                      </span>
+                    </p>
+                  )}
+                  {filteredFiles[selected].description && (
+                    <p className="d-description">
+                      <span className="name">Description</span>:{' '}
+                      <span className="value">
+                        {filteredFiles[selected].description}
+                      </span>
+                    </p>
+                  )}
+                  {filteredFiles[selected].author && (
+                    <p className="d-author">
+                      <span className="name">Author</span>:{' '}
+                      <span className="value">
+                        {filteredFiles[selected].githubName ? (
+                          <Username
+                            name={filteredFiles[selected].author}
+                            link={
+                              'https://github.com/' +
+                              filteredFiles[selected].githubName
+                            }
+                          />
+                        ) : filteredFiles[selected].twitterName ? (
+                          <Username
+                            name={filteredFiles[selected].author}
+                            link={
+                              'https://twitter.com/' +
+                              filteredFiles[selected].twitterName
+                            }
+                          />
+                        ) : filteredFiles[selected].youtubeName ? (
+                          <Username
+                            name={filteredFiles[selected].author}
+                            link={
+                              'https://youtube.com/' +
+                              filteredFiles[selected].youtubeName
+                            }
+                          />
+                        ) : (
+                          filteredFiles[selected].author
+                        )}
+                      </span>
+                    </p>
+                  )}
                   {filteredFiles[selected].uses.filter((el) => !!el).length >
                     0 && (
                     <p className="d-uses">
@@ -439,6 +448,37 @@ export default function ScriptSearch(props: DefaultViewProps) {
                       </span>
                     </p>
                   )}
+                  {filteredFiles[selected].shortcut && (
+                    <p className="d-shortcut">
+                      <span className="name">Shortcut</span>:{' '}
+                      <span className="value">
+                        <KbdList
+                          keys={
+                            filteredFiles[selected].shortcut
+                              ?.split('+')
+                              .filter((el) => el.length > 0) || []
+                          }
+                        />
+                      </span>
+                    </p>
+                  )}
+                  {filteredFiles[selected].schedule &&
+                    filteredFiles[selected].nextRun && (
+                      <>
+                        <p className="d-schedule">
+                          <span className="name">Schedule</span>:{' '}
+                          <span className="value">
+                            {filteredFiles[selected].schedule}
+                          </span>
+                        </p>
+                        <p className="d-nextrun">
+                          <span className="name">Next Run</span>:{' '}
+                          <span className="value">
+                            {filteredFiles[selected].nextRun}
+                          </span>
+                        </p>
+                      </>
+                    )}
                 </>
               )}
             <div className="filename">

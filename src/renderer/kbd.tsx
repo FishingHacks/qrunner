@@ -25,7 +25,7 @@ export function Kbd(props: { children: string }) {
 
 export function KbdList({
     keys,
-    splitter = ' + ',
+    splitter = ' + '
 }: {
     keys: string[];
     splitter?: string;

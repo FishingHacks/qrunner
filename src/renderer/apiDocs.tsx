@@ -100,7 +100,6 @@ export default function ApiDocs(props: DefaultViewProps) {
           )
           .map((el) => (
             <a
-              key={el.toLowerCase().replaceAll(' ', '-')}
               href={'#' + el}
               onClick={(e) => {
                 e.preventDefault();

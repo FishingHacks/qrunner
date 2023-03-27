@@ -16,9 +16,6 @@ const api = {
     getScripts() {
         return ipcRenderer.invoke('list-scripts');
     },
-    forceReloadFiles() {
-        return ipcRenderer.invoke('force-reload-scripts');
-    },
     openGithub(name) {
         return ipcRenderer.invoke('open-github', name);
     },
@@ -135,6 +132,15 @@ const api = {
     },
     submitTextarea(value) {
         return ipcRenderer.invoke('textarea-submit', value);
+    },
+    getShortcut() {
+        return ipcRenderer.invoke('get-shortcut');
+    },
+    setShortcut(s) {
+        return ipcRenderer.invoke('set-shortcut', s);
+    },
+    getScriptshortcuts() {
+        return ipcRenderer.invoke('get-scriptshortcuts');
     },
     addEventListener(name, cb) {
         ipcRenderer.on(name, cb);

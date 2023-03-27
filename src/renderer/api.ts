@@ -8,7 +8,6 @@ interface ElectronApi {
   getScriptDir(): pStr;
   getScript(name: string): pStr;
   getScripts(): Promise<File[]>;
-  forceReloadFiles(): Promise<File[]>;
   openGithub(name: string): pVoid;
   editScript(name: string): pVoid;
   getColors(): Promise<ColorScheme>;
@@ -50,6 +49,9 @@ interface ElectronApi {
   startDrag(file: string): pVoid;
   importFileFromComputer(): pVoid;
   submitTextarea(value: string | null | undefined): pVoid;
+  getShortcut(): pStr;
+  setShortcut(newShortcut: string): pVoid;
+  getScriptshortcuts(): Promise<Record<string, string>>
   addEventListener(
     event: string,
     cb: (event: any, ...args: any[]) => void
@@ -70,6 +72,9 @@ export interface File {
   twitterName?: string | undefined;
   youtubeName?: string | undefined;
   uses: string[];
+  shortcut?: string;
+  schedule?: string;
+  nextRun?: number;
 }
 
 export interface ArgOption<T extends string = string> {

@@ -1,5 +1,6 @@
 /* eslint global-require: off, no-console: off, promise/always-return: off */
 
+import cron from 'node-cron';
 import path, { sep } from 'path';
 import { resolveHtmlPath } from './util';
 import chalk from 'chalk';
@@ -15,7 +16,14 @@ import {
   shell,
   Tray,
 } from 'electron';
-import { constants, existsSync, mkdirSync, watch, writeFileSync } from 'fs';
+import {
+  constants,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  watch,
+  writeFileSync,
+} from 'fs';
 import {
   appendFile,
   chmod,
@@ -66,6 +74,7 @@ import installRequiredPackages from './installTypescript';
 import { randomUUID } from 'crypto';
 import { createServer } from 'http';
 import { format } from 'util';
+import { getInfo, ScriptInfo } from './extractScriptInfos';
 
 if (process.defaultApp) {
   if (process.argv.length >= 2)
@@ -155,10 +164,14 @@ export const fontFile = join(QRunnerDirectory, 'font');
 export const configFile = join(QRunnerDirectory, '.config.json');
 export const logFile = join(logDir, 'console.log');
 export const tmpDir = join(QRunnerDirectory, 'tmp');
+export const shortcutFile = join(QRunnerDirectory, 'shortcut');
 
 ensureDir(tmpDir);
 ensureDir(SCRIPTDIR);
-ensureFile(join(SCRIPTDIR, 'package.json'), '{ "name": "qrunner scripts", "dependencies": {} }');
+ensureFile(
+  join(SCRIPTDIR, 'package.json'),
+  '{ "name": "qrunner scripts", "dependencies": {} }'
+);
 ensureFile(colorSchemeFile, JSON.stringify(colorsDefault));
 ensureDir(colorSchemeDir);
 ensureFile(join(SCRIPTDIR, 'globals.d.ts'), globalsDTS);
@@ -169,6 +182,7 @@ ensureFile(fontFile, 'ubuntu');
 ensureFile(configFile, '{}');
 ensureDir(logDir);
 ensureFile(logFile, '');
+ensureFile(shortcutFile, 'Super+Q');
 const runnerFile = join(QRunnerDirectory, 'run');
 ensureFile(runnerFile, runFile);
 chmod(
@@ -180,6 +194,12 @@ chmod(
     constants.S_IWGRP |
     constants.S_IROTH
 );
+
+export let shortcut = 'Super+Q';
+try {
+  shortcut = readFileSync(shortcutFile).toString();
+} catch {}
+
 installRequiredPackages(SCRIPTDIR, [
   'typescript',
   'highlight.js',
@@ -212,8 +232,16 @@ ipcMain.on('get-preview', (ev, key: string) => getArgPreview(key));
 ipcMain.handle('kill-script', (ev, pid: number) => kill(pid));
 ipcMain.handle('get-script-dir', () => SCRIPTDIR);
 ipcMain.handle('get-script', async (ev, name: string) => getScript(name));
+ipcMain.handle('get-shortcut', async (ev) => shortcut);
+ipcMain.handle('set-shortcut', async (ev, s: string) =>
+  writeFile(shortcutFile, s)
+);
 export let uiChangeCb: (() => void)[] = [];
-export async function arg(name: string, options?: (string | ArgOption)[], hint?: string) {
+export async function arg(
+  name: string,
+  options?: (string | ArgOption)[],
+  hint?: string
+) {
   await show();
   for (const cb of uiChangeCb)
     try {
@@ -264,9 +292,12 @@ export async function show() {
       mainWindow?.webContents.once('did-finish-load', r)
     );
 }
-ipcMain.handle('arg', (ev, name: string, options?: (string | ArgOption)[], hint?: string) => {
-  return arg(name, options, hint);
-});
+ipcMain.handle(
+  'arg',
+  (ev, name: string, options?: (string | ArgOption)[], hint?: string) => {
+    return arg(name, options, hint);
+  }
+);
 ipcMain.handle('get-processes', getProcs);
 ipcMain.handle('kill-proc', (ev, pid: number) => kill(pid));
 ipcMain.handle('hide-window', hide);
@@ -293,8 +324,7 @@ ipcMain.handle('delete-colorscheme', (ev, name: string) =>
   deleteColorscheme(name)
 );
 
-ipcMain.handle('list-scripts', () => listScripts(false));
-ipcMain.handle('force-reload-scripts', () => listScripts(true));
+ipcMain.handle('list-scripts', () => listScripts());
 ipcMain.handle('open-github', (ev, name: string) =>
   shell.openExternal('https://github.com/' + name)
 );
@@ -347,6 +377,103 @@ function resolveQueue() {
   } catch {}
 }
 
+export let scriptData: Record<string, ScriptInfo> = {};
+let isSyncing = false;
+async function syncFiles() {
+  if (isSyncing) return;
+  isSyncing = true;
+
+  const files = (await readdir(SCRIPTDIR)).filter(
+    (el) =>
+      el.endsWith('.ts') && !el.endsWith('.d.ts') && !el.endsWith('.module.ts')
+  );
+  for (const k of Object.keys(scriptData)) delete scriptData[k];
+
+  await Promise.allSettled(
+    files.map((f) =>
+      readFile(join(SCRIPTDIR, f))
+        .then((f) => f.toString())
+        .then(getInfo)
+        .then((i) => (scriptData[f] = i))
+        .catch(() => {})
+    )
+  );
+
+  isSyncing = false;
+}
+
+let registeredShortcuts: string[] = [];
+let isRegisteringShortcuts = false;
+function reloadShortcuts(filename?: string) {
+  if (isRegisteringShortcuts) return;
+  isRegisteringShortcuts = true;
+
+  registeredShortcuts.forEach((acc) => globalShortcut.unregister(acc));
+  registeredShortcuts = [];
+
+  for (const [f, s] of Object.entries(scriptData)) {
+    if (!s.shortcut) continue;
+    if (globalShortcut.isRegistered(s.shortcut))
+      log(
+        'error',
+        'script-helper',
+        '%s tries to register shortcut "%s", but it is already registered!',
+        f,
+        s.shortcut
+      );
+    else {
+      globalShortcut.register(s.shortcut, () => runScript(f));
+      registeredShortcuts.push(s.shortcut);
+      if (!filename || f === filename)
+        log(
+          'info',
+          'script-helper',
+          'registered shortcut "%s" for %s',
+          s.shortcut,
+          f
+        );
+    }
+  }
+
+  isRegisteringShortcuts = false;
+}
+
+let registeredSchedules: (() => void)[] = [];
+let isRegisteringSchedules = false;
+function reloadSchedules(filename?: string) {
+  if (isRegisteringSchedules) return;
+  isRegisteringSchedules = true;
+
+  registeredSchedules.forEach((stop) => stop());
+  registeredSchedules = [];
+
+  for (const [f, s] of Object.entries(scriptData)) {
+    if (!s.schedule) continue;
+    if (!cron.validate(s.schedule))
+      log(
+        'error',
+        'script-scheduler',
+        'Failed to register schedule %s for script %s: Schedule is invalid',
+        s.schedule,
+        f
+      );
+    else {
+      const task = cron.schedule(s.schedule, () => runScript(f));
+      registeredSchedules.push(() => task.stop());
+      if (!filename || f === filename)
+        log(
+          'info',
+          'script-helper',
+          'registered schedule %s for %s',
+          s.schedule,
+          f
+        );
+    }
+  }
+
+  isRegisteringSchedules = false;
+}
+
 function queueMessage(name: string, ...args: any[]) {
   if (!onTimeout) {
     mainWindow?.webContents?.send(name, ...args);
@@ -359,9 +486,33 @@ watch(colorSchemeFile, () => {
   queueMessage('color-change');
 });
 
-watch(SCRIPTDIR, () => {
+watch(shortcutFile, async () => {
+  globalShortcut.unregister(shortcut);
+  try {
+    shortcut = (await readFile(shortcutFile)).toString();
+    queueMessage('shortcut-change', shortcut);
+    globalShortcut.register(shortcut, show);
+  } catch {
+    shortcut = 'Super+Q';
+    globalShortcut.register(shortcut, show);
+  }
+  log('info', 'shortcut', 'Opening shortcut got changed to ' + shortcut);
+});
+
+watch(SCRIPTDIR, (type, filename) => {
   queueMessage('script-change');
   syncBinDir();
+  syncFiles().then(() => {
+    reloadShortcuts(filename);
+    reloadSchedules(filename);
+  });
+});
+
+// setup files
+syncBinDir();
+syncFiles().then(() => {
+  reloadShortcuts();
+  reloadSchedules();
 });
 
 export function displayError(name: string, error: string) {
@@ -406,7 +557,6 @@ async function syncBinDir() {
       );
     }
 }
-syncBinDir();
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -671,7 +821,6 @@ app.whenReady().then(() => {
   app.setName('QRunner');
 
   globalShortcut.register('Super+Q', show);
-  globalShortcut.register('Super+Alt+Q', restart);
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common

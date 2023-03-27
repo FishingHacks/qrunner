@@ -100,6 +100,7 @@ export const KeySymbols = {
     alt: 'Alt',
     option: '⌥',
     win: 'Win',
+    super: 'Win',
     escape: 'Esc',
     tab: '↹',
     lt: '<',

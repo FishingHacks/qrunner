@@ -20,6 +20,7 @@ import {
   runner,
   configFile,
   log,
+  scriptData,
 } from './main';
 import { getInfo } from './extractScriptInfos';
 import handle, { channels } from './handleApiCalls';
@@ -28,6 +29,8 @@ import generateScript from './scriptGenerator';
 import { slugify } from './slugify';
 import { constants, existsSync } from 'fs';
 import { dialog } from 'electron';
+import { validate } from 'node-cron';
+import { parseExpression } from 'cron-parser';
 
 export async function createScript(name: string) {
   log('info', 'script helper', 'Creating script %s', name);
@@ -221,29 +224,23 @@ function getYouTubeUsername(url: string): string | undefined {
   const ghUrlRegex = /^(https?:\/\/)?(youtube|yt)(\.com)?\/([@_a-zA-Z]+)$/g;
   return ghUrlRegex.exec(url)?.[4] || undefined;
 }
-let cachedFiles: File[] = [];
-export async function listScripts(force?: boolean) {
-  const files = (await readdir(SCRIPTDIR)).filter(
-    (el) =>
-      !el.endsWith('.d.ts') && el.endsWith('.ts')
-  );
-  if (cachedFiles.length === files.length && !force) return cachedFiles;
-  const newFiles: File[] = [];
-  for (const f of files) {
-    const contents = (await readFile(join(SCRIPTDIR, f))).toString();
-    const { author, description, name, url, uses } = getInfo(contents);
-    newFiles.push({
-      path: f,
-      name,
-      author,
-      description,
-      githubName: getGithubUsername(url || ''),
-      twitterName: getTwitterUsername(url || ''),
-      youtubeName: getYouTubeUsername(url || ''),
-      uses: uses.split(','),
-    });
-  }
-  return (cachedFiles = newFiles);
+export function listScripts(): File[] {
+  return Object.entries(scriptData).map<File>(([f, script]) => ({
+    path: f,
+    author: script.author,
+    description: script.description,
+    name: script.name,
+    uses: script.uses.split(','),
+    githubName: getGithubUsername(script.url),
+    twitterName: getTwitterUsername(script.url),
+    youtubeName: getYouTubeUsername(script.url),
+    schedule: script.schedule,
+    shortcut: script.shortcut,
+    nextRun:
+      !script.schedule || !validate(script.schedule)
+        ? undefined
+        : parseExpression(script.schedule).next().toDate().getTime(),
+  }));
 }
 
 export function getScriptName(pid: number) {

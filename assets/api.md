@@ -154,6 +154,70 @@ isDir(path: string): Promise<boolean>;
 
 ---
 
+## fs.ensureDir
+
+```typescript
+///file: typedef.d.ts
+function ensureDir(path: string): Promise<void>;
+```
+
+> Ensure the existence of an directory synchronously
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## fs.ensureFile
+
+```typescript
+///file: typedef.d.ts
+function ensureFile(path: string, contents: string): Promise<void>;
+```
+
+> Ensure the existence of an file synchronously
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## fs.tree
+
+```typescript
+///file: typedef.d.ts
+function tree(path: string): Promise<string[]>;
+```
+
+> Create a tree of a folder synchronously. Files are specified in absolute paths
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## fs.findFiles
+
+```typescript
+///file: typedef.d.ts
+interface FileFinderOptions {
+  extensions?: string[];
+  extension?: string;
+  filenames?: string[];
+  filename?: string;
+  validate?(
+    filename: string,
+    extension: string,
+    fileWithExtension: string,
+    absolutePath: string
+  ): boolean;
+}
+function findFiles(path: string, options: FileFinderOptions): Promise<string[]>;
+```
+
+> Find a file in a directory synchronously
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
 ## fs.getCwd
 
 ```typescript
@@ -266,6 +330,70 @@ isDirSync(path: string): boolean;
 ```
 
 > Check if a path points to a folder synchronously
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## fs.ensureDirSync
+
+```typescript
+///file: typedef.d.ts
+function ensureDirSync(path: string): void;
+```
+
+> Ensure the existence of an directory synchronously
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## fs.ensureFileSync
+
+```typescript
+///file: typedef.d.ts
+function ensureFileSync(path: string, contents: string): void;
+```
+
+> Ensure the existence of an file synchronously
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## fs.treeSync
+
+```typescript
+///file: typedef.d.ts
+function treeSync(path: string): string[];
+```
+
+> Create a tree of a folder synchronously. Files are specified in absolute paths
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## fs.findFilesSync
+
+```typescript
+///file: typedef.d.ts
+interface FileFinderOptions {
+  extensions?: string[];
+  extension?: string;
+  filenames?: string[];
+  filename?: string;
+  validate?(
+    filename: string,
+    extension: string,
+    fileWithExtension: string,
+    absolutePath: string
+  ): boolean;
+}
+function findFilesSync(path: string, options: FileFinderOptions): string[];
+```
+
+> Find a file in a directory synchronously
 >
 > **Supports**: Linux Windows MacOS
 
@@ -871,19 +999,6 @@ function onTab(name: string, cb: () => any): () => void;
 
 ---
 
-## setTab
-
-```typescript
-///file: typedef.d.ts
-function setTab(name: string): void;
-```
-
-> Switch the tab
->
-> **Supports**: Linux Windows MacOS
-
----
-
 ## div
 
 ```typescript
@@ -907,12 +1022,6 @@ function resetDiv(): void;
 > Close that window
 >
 > **Supports**: Linux Windows MacOS
-
----
-
-## API Namespace
-
-> All above-mentioned functions are available in the API namespace. This means, you can call `widget(...)` and `API.widget(...)` and it will do the exact same.
 
 ---
 
@@ -1004,6 +1113,38 @@ function startDrag(file: string): void;
 > Start dragging the file supplied with the `file` argument
 >
 > **Supports**: Linux Windows MacOS
+
+---
+
+## textarea
+
+```typescript
+///file: typedef.d.ts
+function textarea(name: string): Promise<string>;
+```
+
+> Get input from a textarea (multi-line input field)
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## tmp
+
+```typescript
+///file: typedef.d.ts
+function tmp(content: string, name?: string, extension?: string): string;
+```
+
+> Create a temporary file
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## API Namespace
+
+> All above-mentioned functions are available in the API namespace. This means, you can call `widget(...)` and `API.widget(...)` and it will do the exact same.
 
 ---
 

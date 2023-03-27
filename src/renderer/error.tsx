@@ -29,7 +29,7 @@ export default function ErrorElement(
                         borderRadius: 3,
                         border: '1px solid var(--color-gray)',
                         minHeight: '50vh',
-                        whiteSpace: 'break-spaces',
+                        whiteSpace: 'pre',
                     }}
                 >
                     {props.error}

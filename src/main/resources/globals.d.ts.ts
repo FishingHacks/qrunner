@@ -5,24 +5,48 @@ interface ClipboardUtils {
     paste(): Promise<void>;
 }
 declare const clipboard: ClipboardUtils;
+interface FileFinderOptions {
+    extensions?: string[];
+    extension?: string;
+    filenames?: string[];
+    filename?: string;
+    validate?(
+        filename: string,
+        extension: string,
+        fileWithExtension: string,
+        absolutePath: string
+    ): boolean;
+}
 interface FileSystem {
     copy(from: string, to: string): Promise<void>;
     move(from: string, to: string): Promise<void>;
     link(from: string, to: string): Promise<void>;
     listDir(dir: string): Promise<string[]>;
     removeFile(path: string): Promise<void>;
+    removeDir(path: string): Promise<void>;
+    delete(path: string): Promise<void>;
     createDir(path: string): Promise<void>;
     isFile(path: string): Promise<boolean>;
     isDir(path: string): Promise<boolean>;
+    ensureDir(path: string): Promise<void>;
+    ensureFile(path: string, contents: string): Promise<void>;
+    tree(path: string): Promise<string[]>;
+    findFiles(path: string, options: FileFinderOptions): Promise<string[]>;
     getCwd(): string;
     copySync(from: string, to: string): void;
     moveSync(from: string, to: string): void;
     linkSync(from: string, to: string): void;
     listDirSync(dir: string): string[];
     removeFileSync(path: string): void;
+    removeDirSync(path: string): void;
+    deleteSync(path: string): void;
     createDirSync(path: string): void;
     isFileSync(path: string): boolean;
     isDirSync(path: string): boolean;
+    ensureDirSync(path: string): void;
+    ensureFileSync(path: string, contents: string): void;
+    treeSync(path: string): string[];
+    findFilesSync(path: string, options: FileFinderOptions): string[];
 }
 declare const fs: FileSystem;
 interface Process {
@@ -102,7 +126,7 @@ declare function arg(
     autocomplete?: (
         key: string
     ) => Promise<string | undefined> | string | undefined,
-    hint?: string,
+    hint?: string
 ): Promise<string>;
 declare function hide(): Promise<void>;
 declare function show(): Promise<void>;
@@ -210,7 +234,7 @@ declare namespace API {
         autocomplete?: (
             key: string
         ) => Promise<string | undefined> | string | undefined,
-        hint?: string,
+        hint?: string
     ): Promise<string>;
     function hide(): Promise<void>;
     function show(): Promise<void>;

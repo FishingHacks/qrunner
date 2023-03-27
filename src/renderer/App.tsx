@@ -27,6 +27,7 @@ import { KbdList } from './kbd';
 import Drop from './drop';
 import New from './new';
 import Textarea from './Textarea';
+import ScriptInfo from './scriptinfo';
 
 let i = 0;
 
@@ -113,7 +114,13 @@ const App = () => {
   const [search, setSearch] = useState('');
   const searchLowerCase = search.toLowerCase();
   const [tab, setTab] = useState<
-    'search' | 'api-docs' | 'settings' | 'proc-list' | 'package-list' | 'new'
+    | 'search'
+    | 'api-docs'
+    | 'settings'
+    | 'proc-list'
+    | 'package-list'
+    | 'new'
+    | 'script-info'
   >('search');
   const [argMode, setArgMode] = useState(false);
   const [errMode, setErrMode] = useState(false);
@@ -192,9 +199,10 @@ const App = () => {
 
   error = (name: string) => (err: any) => {
     if (err.stack) setErrProps({ name, error: err.stack.toString() });
-    if (err.message) setErrProps({ name, error: err.message.toString() });
-    if (err.name) setErrProps({ name, error: err.name.toString() });
-    if (err.stack) setErrProps({ name, error: err.toString() });
+    else if (err.message) setErrProps({ name, error: err.message.toString() });
+    else if (err.name) setErrProps({ name, error: err.name.toString() });
+    else if (err) setErrProps({ name, error: err.toString() });
+    else setErrProps({ name, error: '' + err });
     setErrMode(true);
   };
 
@@ -228,6 +236,10 @@ const App = () => {
     {
       name: 'New',
       id: 'new',
+    },
+    {
+      name: 'Script Informations',
+      id: 'script-info',
     },
     {
       name: 'Running Scripts',
@@ -494,6 +506,9 @@ const App = () => {
         )}
         {tab === 'package-list' && !hasScriptFunctionality && (
           <PackageList {...props} />
+        )}
+        {tab === 'script-info' && !hasScriptFunctionality && (
+          <ScriptInfo {...props} />
         )}
         {tab === 'new' && !hasScriptFunctionality && <New {...props} />}
         {errMode && <ErrorElement {...props} {...errProps} />}

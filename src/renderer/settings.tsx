@@ -732,13 +732,21 @@ const tailwindCssColorLookup = {
 };
 
 let $reloadEditor = () => {};
+let $setShortcut = (s: string) => {};
+let $setTempShortcut = (s: string) => {};
 
 export default function Settings(props: DefaultViewProps) {
   props.config.disableBar = false;
   props.config.disableTabs = false;
   props.config.disableSearch = true;
   const { state: font, setState: setFont } = useAsyncState(API.getFont);
+  const {
+    state: shortcut,
+    setState: setShortcut,
+    reload: reloadShortcut,
+  } = useAsyncState(API.getShortcut);
   const [colorsExpanded, setColorsExpanded] = useState(false);
+  $setShortcut = setShortcut;
 
   const {
     state: config,
@@ -753,6 +761,8 @@ export default function Settings(props: DefaultViewProps) {
   );
   const [saved, setSaved] = useState(false);
   const [updated, setUpdated] = useState(true);
+  const [tempShortcut, setTempShortcut] = useState(shortcut);
+  $setTempShortcut = setTempShortcut;
 
   function setConfig(
     set:
@@ -776,17 +786,19 @@ export default function Settings(props: DefaultViewProps) {
       );
   };
 
+  useEffect(() => $setTempShortcut(shortcut), [shortcut]);
+
   useEffect(() => {
     const footer = [
       <p onClick={() => $save()} style={{ cursor: 'pointer' }}>
-        <KbdList keys={['cmd/ctrl', 's']} />: save
+        <KbdList keys={['cmd/ctrl', 's']} />: Save Theme
       </p>,
       <p onClick={() => $reload()} style={{ cursor: 'pointer' }}>
-        <KbdList keys={['f5']} />: Reload
+        <KbdList keys={['f5']} />: Reload Theme
       </p>,
     ];
 
-    footer.unshift(<p>Changes {updated ? 'Saved' : 'Unsaved'}</p>);
+    footer.unshift(<p>Theme {updated ? 'Saved' : 'Unsaved'}</p>);
     if (saved) footer.unshift(<p>Color copied to Clipboard!</p>);
 
     props.config.setFooter(footer);
@@ -797,6 +809,14 @@ export default function Settings(props: DefaultViewProps) {
     API.addEventListener('color-change', onChange);
     return () => API.removeEventListener('color-change', onChange);
   }, [saved, updated]);
+
+  useEffect(
+    () =>
+      API.addEventListener('shortcut-change', (ev, newShortcut: string) =>
+        $setShortcut(newShortcut)
+      ),
+    []
+  );
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -816,7 +836,7 @@ export default function Settings(props: DefaultViewProps) {
   }, []);
 
   return (
-    <div className="page">
+    <div className="page settings">
       <div className="flex" style={{ marginTop: 10 }}>
         <label htmlFor="select-font">
           <h3
@@ -869,6 +889,29 @@ export default function Settings(props: DefaultViewProps) {
           <option value="emacs">Emacs</option>
           <option value="subl">Sublime</option>
         </select>
+        <h3 style={{ marginLeft: '1rem', marginRight: '.3rem' }}>Shortcut:</h3>
+        <KbdList
+          keys={tempShortcut
+            .split('+')
+            .map((el) => el.toLowerCase())
+            .map((el) =>
+              ['CommandOrControl', 'CmdOrCtrl'].includes(el) ? 'cmd/ctrl' : el
+            )
+            .filter((el) => el.length > 0)}
+        />
+        <input
+          value={tempShortcut}
+          style={{ marginLeft: '.25rem', width: '5rem', marginRight: '.3rem' }}
+          onChange={(e) => setTempShortcut(e.target.value || '')}
+          onKeyDown={(ev) =>
+            ev.key === 'Enter'
+              ? API.setShortcut(tempShortcut).then(() =>
+                  $setShortcut(tempShortcut)
+                )
+              : null
+          }
+        />
+        <p>({tempShortcut === shortcut ? 'Saved' : 'Unsaved, hit Enter to save!'})</p>
       </div>
       {config === 'loading' ? (
         <p>Loading...</p>
@@ -1037,10 +1080,16 @@ export default function Settings(props: DefaultViewProps) {
             >
               <div
                 className="flex"
-                style={{ cursor: 'pointer', marginTop: 20, width: 'fit-content' }}
+                style={{
+                  cursor: 'pointer',
+                  marginTop: 20,
+                  width: 'fit-content',
+                }}
                 onClick={() => setColorsExpanded((e) => !e)}
               >
-                <h3 style={{ margin: 0, marginRight: 10 }}>TailwindCSS Colors</h3>
+                <h3 style={{ margin: 0, marginRight: 10 }}>
+                  TailwindCSS Colors
+                </h3>
                 <div
                   dangerouslySetInnerHTML={{
                     __html: colorsExpanded ? chevronUp : chevronDown,
