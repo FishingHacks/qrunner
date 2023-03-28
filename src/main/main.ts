@@ -4,7 +4,6 @@ import cron from 'node-cron';
 import path, { sep } from 'path';
 import { resolveHtmlPath } from './util';
 import chalk from 'chalk';
-import { spawnSync } from 'child_process';
 import {
   app,
   BrowserWindow,
@@ -33,7 +32,7 @@ import {
   rm,
   writeFile,
 } from 'fs/promises';
-import { homedir, platform } from 'os';
+import { homedir } from 'os';
 import { join } from 'path';
 import { ArgOption, DropFile } from '../renderer/api';
 
@@ -41,9 +40,10 @@ import { ArgOption, DropFile } from '../renderer/api';
 import globalsDTS from './resources/globals.d.ts';
 import globalsJS from './resources/globals.js';
 import runFile from './resources/run';
+import tsconfig from './resources/tsconfig.json';
+import vscodeSettingsJson from './resources/vscode_settings_json';
 import { colorsDefault } from '../renderer/constants';
 import menu from './menu';
-import tsconfig from './resources/tsconfig.json';
 import {
   changeColorscheme,
   createColorscheme,
@@ -168,6 +168,8 @@ chmod(
     constants.S_IWGRP |
     constants.S_IROTH
 );
+ensureDir(join(SCRIPTDIR, '.vscode'));
+ensureFile(join(SCRIPTDIR, '.vscode', 'settings.json'), vscodeSettingsJson);
 
 export let shortcut = 'Super+Q';
 try {
