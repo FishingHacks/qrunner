@@ -15,7 +15,7 @@ import {
 } from './main';
 import { getConfig, getScriptName } from './ipc';
 import { join } from 'path';
-import { homedir } from 'os';
+import { homedir, platform } from 'os';
 import { spawn } from 'child_process';
 
 export const channels = {
@@ -192,7 +192,7 @@ export default function handle(
   } else if (channel === channels.RUN_IN_EDITOR) {
     if (!data.file || typeof data.file !== 'string') return;
     getConfig('editor').then((editor) =>
-      spawn(editor || 'code', [data.file.toString()], { shell: true }).on('error', () => {})
+      spawn(editor || 'code', [data.file.toString()], { shell: platform() === 'win32' }).on('error', () => {})
     );
   } else if (channel === channels.TEXTAREA) {
     if (!data.name || typeof data.name !== 'string') return;

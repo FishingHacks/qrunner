@@ -60,10 +60,10 @@ export default function New(props: DefaultViewProps) {
 
     props.config.setFooter([
       <p>
-        <Kbd children={KeySymbols.arrowUp} />: Move down
+        <Kbd children={KeySymbols.arrowUp} />: Move Up
       </p>,
       <p>
-        <Kbd>{KeySymbols.arrowDown}</Kbd>: Move Up
+        <Kbd>{KeySymbols.arrowDown}</Kbd>: Move Down
       </p>,
       <p>
         <Kbd>enter</Kbd>: Execute action

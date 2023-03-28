@@ -22,7 +22,6 @@ import {
   log,
   scriptData,
 } from './main';
-import { getInfo } from './extractScriptInfos';
 import handle, { channels } from './handleApiCalls';
 import { getPackageManager } from './installTypescript';
 import generateScript from './scriptGenerator';
@@ -31,6 +30,7 @@ import { constants, existsSync } from 'fs';
 import { dialog } from 'electron';
 import { validate } from 'node-cron';
 import { parseExpression } from 'cron-parser';
+import { platform } from 'os';
 
 export async function createScript(name: string) {
   log('info', 'script helper', 'Creating script %s', name);
@@ -41,6 +41,9 @@ export async function createScript(name: string) {
 }
 const processes: Record<number, ChildProcess> = {};
 export async function runScript(name: string, ...args: string[]) {
+  if (!scriptData[name]) return log('error', 'No script with the name %s found!', name);
+  const hide = scriptData[name].hide;
+
   log('info', 'script helper', 'Running script %s with args: %s', name, args);
   const old = (await readFile(join(SCRIPTDIR, name))).toString();
   const { imports, remaining } = transform(old);
@@ -59,9 +62,10 @@ export async function runScript(name: string, ...args: string[]) {
         cwd: SCRIPTDIR,
         stdio: ['ipc'],
         shell: true,
+        // shell: platform() === 'win32',
       }
     );
-    log(
+    if (!hide) log(
       'debug',
       'command line',
       '"%s" "%s" "%s" %s',
@@ -98,7 +102,7 @@ export async function runScript(name: string, ...args: string[]) {
     spawned.on('error', remove);
     spawned.on('exit', remove);
     spawned.on('message', (data) => {
-      log(
+      if (!hide) log(
         'debug',
         'api',
         'Message from pid: %d | file: %s | data: %s',
@@ -224,23 +228,34 @@ function getYouTubeUsername(url: string): string | undefined {
   const ghUrlRegex = /^(https?:\/\/)?(youtube|yt)(\.com)?\/([@_a-zA-Z]+)$/g;
   return ghUrlRegex.exec(url)?.[4] || undefined;
 }
-export function listScripts(): File[] {
-  return Object.entries(scriptData).map<File>(([f, script]) => ({
-    path: f,
-    author: script.author,
-    description: script.description,
-    name: script.name,
-    uses: script.uses.split(','),
-    githubName: getGithubUsername(script.url),
-    twitterName: getTwitterUsername(script.url),
-    youtubeName: getYouTubeUsername(script.url),
-    schedule: script.schedule,
-    shortcut: script.shortcut,
-    nextRun:
-      !script.schedule || !validate(script.schedule)
-        ? undefined
-        : parseExpression(script.schedule).next().toDate().getTime(),
-  }));
+export async function listScripts(): Promise<File[]> {
+  return [
+    ...Object.entries(scriptData).map<File>(([f, script]) => ({
+      path: f,
+      author: script.author,
+      description: script.description,
+      name: script.name,
+      uses: script.uses.split(','),
+      githubName: getGithubUsername(script.url),
+      twitterName: getTwitterUsername(script.url),
+      youtubeName: getYouTubeUsername(script.url),
+      schedule: script.schedule,
+      shortcut: script.shortcut,
+      nextRun:
+        !script.schedule || !validate(script.schedule)
+          ? undefined
+          : parseExpression(script.schedule).next().toDate().getTime(),
+    })),
+    ...(await readdir(SCRIPTDIR))
+      .filter((el) => el.endsWith('.module.ts'))
+      .map((el) => ({
+        path: el,
+        name: el,
+        description: '',
+        author: '',
+        uses: [],
+      })),
+  ].sort((a, b) => (a.name || a.path).localeCompare(b.name || b.path));
 }
 
 export function getScriptName(pid: number) {
@@ -274,7 +289,7 @@ export function uninstallPackage(name: string) {
   log('info', 'package-manager', 'Uninstalling %s', name);
   const spawned = spawn(getPackageManager(), ['remove', name], {
     cwd: SCRIPTDIR,
-    shell: true,
+    shell: platform() === 'win32',
   });
 
   let returned = false;
@@ -375,7 +390,7 @@ export async function installPackage(name: string) {
     [getPackageManager() === 'yarn' ? 'add' : 'install', name],
     {
       cwd: SCRIPTDIR,
-      shell: true,
+      shell: platform() === 'win32',
     }
   );
 
@@ -409,7 +424,7 @@ export async function installPackage(name: string) {
 export async function editScript(path: string) {
   access(join(SCRIPTDIR, path), constants.R_OK);
   spawn((await getConfig('editor')) || 'code', [join(SCRIPTDIR, path)], {
-    shell: true,
+    shell: platform() === 'win32',
   }).on('error', () => {});
 }
 

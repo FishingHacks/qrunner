@@ -37,7 +37,7 @@ const Tabs = forwardRef<
           ((e.target as HTMLElement).nodeName === 'INPUT' ||
           (e.target as HTMLElement).nodeName === 'TEXTAREA'
             ? (e.target as HTMLTextAreaElement | HTMLInputElement).value
-                .length < 1
+                .length < 1 && (e.target as HTMLElement).classList.contains('tabs-ignore')
             : true)
         ) {
           let i = props.tabs.findIndex((el) => el.id === props.focused);

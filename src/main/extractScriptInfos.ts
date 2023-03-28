@@ -10,6 +10,7 @@ export interface ScriptInfo {
   uses: string;
   shortcut: string;
   schedule: string;
+  hide: boolean;
 }
 
 export function getInfo(content: string): ScriptInfo {
@@ -19,6 +20,7 @@ export function getInfo(content: string): ScriptInfo {
   const regexAuthor = generateRegex('author');
   const regexShortcut = generateRegex('shortcut');
   const regexSchedule = generateRegex('schedule');
+  const regexHide = /\s*\*\s*@hide/;
   const authorRegex = /\s*([^< ]+)\s*<([^<]+)>/g;
   const commentRegex = /\/\*\*([\s\S]*?)\*\//g;
 
@@ -29,6 +31,7 @@ export function getInfo(content: string): ScriptInfo {
   let uses = '';
   let shortcut = '';
   let schedule = '';
+  let hide = false;
 
   const comments: string[] = [];
 
@@ -59,6 +62,10 @@ export function getInfo(content: string): ScriptInfo {
       const matched = regexSchedule.exec(c);
       if (matched !== null) schedule = matched[1];
     }
+    if (!hide) {
+      const matched = regexHide.exec(c);
+      if (matched !== null) hide = true;
+    }
     if (!author && !url) {
       const matched = regexAuthor.exec(c);
       if (matched !== null) {
@@ -79,5 +86,6 @@ export function getInfo(content: string): ScriptInfo {
     uses,
     shortcut,
     schedule,
+    hide,
   };
 }

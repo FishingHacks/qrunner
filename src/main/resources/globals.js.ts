@@ -40,6 +40,7 @@ const highlightjs = lazyRequire('highlight.js');
  * @type {{get(): typeof import('crypto')}}
  */
 const crypto = lazyRequire('crpyto');
+const { platform } = require('os');
 
 const channels = {
     OPEN: 0,
@@ -74,7 +75,7 @@ function spawnPromise(command, args) {
         const data = [];
 
         const spawned = $spawn(command, args, {
-            shell: true,
+            shell: platform() === 'win32',
             cwd: process.cwd(),
         });
         function done(code) {
@@ -127,9 +128,7 @@ promises.push(
 const today = new Date();
 const logFile = join(
     logDir,
-    \`log-\${today.getFullYear()}-\${today.getMonth()}-\${
-        today.getDate() + 1
-    }-\${today.getHours()}-\${today.getMinutes()}-\${today.getSeconds()}-\${process.argv[2]
+    \`log-\${process.argv[2]
         .split(sep)
         .pop()}.txt\`
 );
@@ -169,7 +168,7 @@ function notify(title, name) {
     if (p === 'linux') {
         $spawn('notify-send', [title, name], {
             detached: true,
-            shell: true,
+            shell: platform() === 'win32',
             cwd: fs.getCwd(),
         });
     } else throw new Error('notify is only supported on linux');
@@ -435,7 +434,7 @@ async function npm(path) {
         if (!packageManager) await Promise.allSettled(promises);
         const installArg = packageManager === 'yarn' ? 'add' : 'install';
         const spawned = spawnSync(packageManager, [installArg, path], {
-            shell: true,
+            shell: platform() === 'win32',
         });
         stop(
             spawned.error || spawned.status !== 0
@@ -633,7 +632,7 @@ function _spawn(name, args, options = {}) {
         ...(options || {}),
         detached: true,
         cwd: fs.getCwd(),
-        shell: true,
+        shell: platform() === 'win32',
     });
 }
 
@@ -934,6 +933,39 @@ expose('closeWidget', closeWidget);
 expose('startDrag', startDrag);
 expose('textarea', textarea);
 expose('tmp', tmp);
+
+const oldConsole = {
+    log: console.log,
+    error: console.error,
+    info: console.info,
+    warn: console.warn,
+    debug: console.debug,
+}
+
+console.log = function log(...args) {
+    oldConsole.log(...args);
+    logToFileSync('info', ...args);
+}
+
+console.error = function error(...args) {
+    oldConsole.log(...args);
+    logToFileSync('error', ...args);
+}
+
+console.info = function info(...args) {
+    oldConsole.log(...args);
+    logToFileSync('info', ...args);
+}
+
+console.warn = function warn(...args) {
+    oldConsole.log(...args);
+    logToFileSync('warn', ...args);
+}
+
+console.debug = function debug(...args) {
+    oldConsole.log(...args);
+    logToFileSync('info', ...args);
+}
 
 process.on('uncaughtException', (err) => {
     console.error('Unhandled Exeption!');

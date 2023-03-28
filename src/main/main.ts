@@ -13,6 +13,7 @@ import {
   ipcMain,
   Menu,
   nativeImage,
+  screen,
   shell,
   Tray,
 } from 'electron';
@@ -32,7 +33,7 @@ import {
   rm,
   writeFile,
 } from 'fs/promises';
-import { homedir } from 'os';
+import { homedir, platform } from 'os';
 import { join } from 'path';
 import { ArgOption, DropFile } from '../renderer/api';
 
@@ -115,7 +116,7 @@ function ensureFile(path: string, contents: string) {
  * 6. copy the path of cli.js in the now created dist folder
  * 7. Pase it here
  */
-const PATCHED_TSX_PATH = '~/js/tsx/dist/cli.js'; // note: put your own path here.
+const PATCHED_TSX_PATH = homedir() + '/js/tsx/dist/cli.js'; // note: put your own path here.
 
 let messages: string[] = [];
 
@@ -138,11 +139,13 @@ export function log(
 export const runner = (() => {
   // if (!spawnSync('tsx', ['-v']).error) return 'tsx'; // error: TSX doesn't work with IPC connections, see https://github.com/esbuild-kit/tsx/issues/201
   if (
-    !spawnSync(PATCHED_TSX_PATH, ['-v'], { shell: true }).error &&
+    !spawnSync(PATCHED_TSX_PATH, ['-v'], { shell: platform() === 'win32' })
+      .error &&
     PATCHED_TSX_PATH
   )
     return PATCHED_TSX_PATH;
-  if (!spawnSync('ts-node', ['-v'], { shell: true }).error) return 'ts-node';
+  if (!spawnSync('ts-node', ['-v'], { shell: platform() === 'win32' }).error)
+    return 'ts-node';
   // todo: node & tsc
 
   console.error(
@@ -662,6 +665,11 @@ export function createWidget(name: string, content: string) {
 
   function resize(ev: any, w: number, h: number) {
     // if (window.isDestroyed) return;
+    if (w < 0) w = 100;
+    if (h < 0) h = 100;
+    const { height, width } = screen.getPrimaryDisplay().workAreaSize;
+    if (w > width) w = width;
+    if (h > height) h = height;
     window.setSize(w, h);
     ipcMain.off('set-sized', resize);
   }

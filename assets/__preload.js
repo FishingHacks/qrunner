@@ -123,24 +123,28 @@ window.addEventListener('DOMContentLoaded', () => {
   );
 
   for (const ev of events)
-    window.addEventListener(ev, (...args) => {
-      if (
-        ev instanceof ErrorEvent &&
-        (ev.message.includes('An object could not be cloned.') ||
-          (ev.error?.stack && ev.error.stack.toString().includes('invoke')))
-      )
-        return;
-      ipcRenderer
-        .invoke(
-          'event',
-          ev,
-          $widgetId,
-          ...args.map((el) =>
-            typeof el === 'object' && el ? transformEvent(el) : el
-          )
+    window.addEventListener(
+      ev,
+      (...args) => {
+        if (
+          ev instanceof ErrorEvent &&
+          (ev.message.includes('An object could not be cloned.') ||
+            (ev.error?.stack && ev.error.stack.toString().includes('invoke')))
         )
-        .then(noop, console.error);
-    });
+          return;
+        ipcRenderer
+          .invoke(
+            'event',
+            ev,
+            $widgetId,
+            ...args.map((el) =>
+              typeof el === 'object' && el ? transformEvent(el) : el
+            )
+          )
+          .then(noop, console.error);
+      },
+      { passive: true }
+    );
 });
 ipcRenderer.on('set-contents', (ev, contents) => {
   document.children[0].innerHTML = contents;
