@@ -1,4 +1,3 @@
-import * as esbuild from 'esbuild';
 import { access, constants, readFile } from 'fs/promises';
 import { join } from 'path';
 import { displayError, log, SCRIPTDIR } from './main';
@@ -17,6 +16,8 @@ export function whenBuildEnds(file: string): Promise<void> {
 }
 
 export async function build(file: string, cancelTransform?: boolean) {
+  const { build } = await import(join(SCRIPTDIR, 'node_modules', 'esbuild'));
+
   if (isBuilding(file)) return;
   cancelTransform ||= false;
   building[file] = [];
@@ -44,7 +45,7 @@ export async function build(file: string, cancelTransform?: boolean) {
 
     log('info', 'build', 'Building %s using esbuild!', file);
 
-    const { errors } = await esbuild.build({
+    const { errors } = await build({
       stdin: {
         contents: newContent,
         resolveDir: SCRIPTDIR,
@@ -64,11 +65,11 @@ export async function build(file: string, cancelTransform?: boolean) {
         'build',
         'Failed to build %s:\n%s',
         file,
-        errors.map((el) => el.text).join('\n' + '-'.repeat(20) + '\n')
+        errors.map((el: any) => el.text).join('\n' + '-'.repeat(20) + '\n')
       );
       displayError(
         'Error while compiling ' + file,
-        errors.map((el) => el.text).join('\n' + '-'.repeat(20) + '\n')
+        errors.map((el: any) => el.text).join('\n' + '-'.repeat(20) + '\n')
       );
     }
   } catch (e: any) {

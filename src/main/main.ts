@@ -484,24 +484,12 @@ watch(SCRIPTDIR, (type, filename) => {
     build(filename, filename.endsWith('.module.ts'));
 });
 
-// setup files
-syncBinDir();
-syncFiles().then(() => {
-  reloadShortcuts();
-  reloadSchedules();
-});
-readdir(SCRIPTDIR).then((f) =>
-  f
-    .filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts'))
-    .forEach((el) => build(el, el.endsWith('.module.ts')))
-);
-
 export function displayError(name: string, error: string) {
   show().then(() => {
     try {
       mainWindow?.webContents?.send('display-error', name, error);
     } catch {}
-  })
+  });
 }
 async function syncBinDir() {
   const $scripts = await readdir(SCRIPTDIR);
@@ -793,9 +781,22 @@ app
       'highlight.js',
       'marked',
       '@types/node',
+      'esbuild',
     ])
   )
   .then(() => {
+    // setup files
+    syncBinDir();
+    syncFiles().then(() => {
+      reloadShortcuts();
+      reloadSchedules();
+    });
+    readdir(SCRIPTDIR).then((f) =>
+      f
+        .filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts'))
+        .forEach((el) => build(el, el.endsWith('.module.ts')))
+    );
+  
     const RESOURCES_PATH = app.isPackaged
       ? path.join(process.resourcesPath, 'assets')
       : path.join(__dirname, '../../assets');

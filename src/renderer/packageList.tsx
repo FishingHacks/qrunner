@@ -21,6 +21,7 @@ const requiredPackages = [
   '@types/node',
   'marked',
   'highlight.js',
+  'esbuild',
 ];
 
 export default function PackageList(props: DefaultViewProps) {
