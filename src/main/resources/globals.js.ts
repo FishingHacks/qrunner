@@ -39,7 +39,7 @@ const highlightjs = lazyRequire('highlight.js');
 /**
  * @type {{get(): typeof import('crypto')}}
  */
-const crypto = lazyRequire('crpyto');
+const crypto = lazyRequire('crypto');
 const { platform } = require('os');
 
 const channels = {
@@ -785,7 +785,10 @@ function onTab(name, cb) {
 }
 
 function div(code) {
-    uiChange();
+    const err = new Error('UI Changed!');
+    for (const cb of callWhenUiChange) cb !== resetDiv ? cb(err) : null;
+    callWhenUiChange = [];
+
     if (!callWhenUiChange.includes(resetDiv)) callWhenUiChange.push(resetDiv);
     send(channels.SET_DIV_DATA, { data: code });
 }

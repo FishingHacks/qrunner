@@ -21,7 +21,6 @@ const requiredPackages = [
   '@types/node',
   'marked',
   'highlight.js',
-  'typescript',
 ];
 
 export default function PackageList(props: DefaultViewProps) {

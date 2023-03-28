@@ -290,7 +290,6 @@ export default function ScriptSearch(props: DefaultViewProps) {
     const footer = [];
     footer.push(
       <p>
-        Directory:{' '}
         <a
           onClick={
             dir === 'loading'
@@ -313,22 +312,22 @@ export default function ScriptSearch(props: DefaultViewProps) {
     );
     footer.push(
       <p style={{ cursor: 'pointer' }} onClick={() => API.openClearDevtools()}>
-        Open new Devtools
+        Open Devtools
       </p>
     );
     footer.push(
       <p style={{ cursor: 'pointer' }} onClick={() => $reloadFiles()}>
-        <kbd>F5</kbd>: reload scripts
+        <kbd>F5</kbd>: Reload Scripts
       </p>
     );
     footer.push(
       <p style={{ cursor: 'pointer' }} onClick={() => $editScript()}>
-        <kbd>F2</kbd>: edit the current script
+        <kbd>F2</kbd>: Edit Script
       </p>
     );
     footer.push(
       <p style={{ cursor: 'pointer' }} onClick={() => $scriptActions()}>
-        <kbd>F3</kbd>: get further actions
+        <kbd>F3</kbd>: Further Actions
       </p>
     );
     props.config.setFooter(footer);

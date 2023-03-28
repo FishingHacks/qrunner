@@ -70,10 +70,10 @@ export default function Processes(props: DefaultViewProps) {
         <Kbd>K</Kbd>: kill the selected script
       </p>,
       <p style={{ cursor: 'pointer' }} onClick={() => $reloadProcs()}>
-        <Kbd>f5</Kbd>: reload the running scripts
+        <Kbd>f5</Kbd>: reload running scripts
       </p>,
       <p style={{ cursor: 'pointer' }} onClick={() => resetLoader()}>
-        <Kbd>f7</Kbd>: Move the currently running script to the background
+        <Kbd>f7</Kbd>: Move running script to the background
       </p>,
     ]);
     function onKeyDown(e: KeyboardEvent) {

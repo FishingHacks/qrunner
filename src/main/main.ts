@@ -176,12 +176,6 @@ try {
   shortcut = readFileSync(shortcutFile).toString();
 } catch {}
 
-installRequiredPackages(SCRIPTDIR, [
-  'typescript',
-  'highlight.js',
-  'marked',
-  '@types/node',
-]);
 ensureDir(binDir);
 
 function dumpLog() {
@@ -738,6 +732,10 @@ export async function createDevtools(obj?: any) {
   window.loadURL(
     'data:text/html;base64,PHNjcmlwdD5jb25zb2xlLmNsZWFyKCk7PC9zY3JpcHQ+'
   );
+  window.webContents.on('did-finish-load', () => {
+    window.webContents.openDevTools({ mode: 'detach' });
+    if (obj) window.webContents.send('print', obj);
+  });
   window.webContents.openDevTools({ mode: 'detach' });
   window.webContents.on('devtools-closed', () => window.close());
 }
@@ -787,33 +785,42 @@ let tray: Tray;
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
-  const RESOURCES_PATH = app.isPackaged
-    ? path.join(process.resourcesPath, 'assets')
-    : path.join(__dirname, '../../assets');
+app
+  .whenReady()
+  .then(() =>
+    installRequiredPackages(SCRIPTDIR, [
+      'highlight.js',
+      'marked',
+      '@types/node',
+    ])
+  )
+  .then(() => {
+    const RESOURCES_PATH = app.isPackaged
+      ? path.join(process.resourcesPath, 'assets')
+      : path.join(__dirname, '../../assets');
 
-  getAssetPath = (...paths: string[]): string => {
-    return path.join(RESOURCES_PATH, ...paths);
-  };
+    getAssetPath = (...paths: string[]): string => {
+      return path.join(RESOURCES_PATH, ...paths);
+    };
 
-  tray = new Tray(getAssetPath('icon.png'));
-  tray.setToolTip('QRunner');
-  const contextMenu = Menu.buildFromTemplate([
-    { label: 'Hide Window', type: 'normal', click: hide },
-    { label: 'Show Window (Super + Q)', type: 'normal', click: show },
-    {
-      label: 'Restart (Super + Alt + Q)',
-      type: 'normal',
-      click: restart,
-    },
-    { label: 'Exit', type: 'normal', click: () => app.quit() },
-  ]);
-  tray.setContextMenu(contextMenu);
-  tray.on('click', show);
-  app.setName('QRunner');
+    tray = new Tray(getAssetPath('icon.png'));
+    tray.setToolTip('QRunner');
+    const contextMenu = Menu.buildFromTemplate([
+      { label: 'Hide Window', type: 'normal', click: hide },
+      { label: 'Show Window (Super + Q)', type: 'normal', click: show },
+      {
+        label: 'Restart (Super + Alt + Q)',
+        type: 'normal',
+        click: restart,
+      },
+      { label: 'Exit', type: 'normal', click: () => app.quit() },
+    ]);
+    tray.setContextMenu(contextMenu);
+    tray.on('click', show);
+    app.setName('QRunner');
 
-  globalShortcut.register('Super+Q', show);
-});
+    globalShortcut.register('Super+Q', show);
+  });
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
