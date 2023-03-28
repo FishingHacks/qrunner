@@ -1,4 +1,4 @@
-import { ChildProcess, spawn } from 'child_process';
+import { ChildProcess, spawn, fork } from 'child_process';
 import {
   access,
   cp,
@@ -31,6 +31,7 @@ import { dialog } from 'electron';
 import { validate } from 'node-cron';
 import { parseExpression } from 'cron-parser';
 import { platform } from 'os';
+import { whenBuildEnds } from './build';
 
 export async function createScript(name: string) {
   log('info', 'script helper', 'Creating script %s', name);
@@ -41,39 +42,32 @@ export async function createScript(name: string) {
 }
 const processes: Record<number, ChildProcess> = {};
 export async function runScript(name: string, ...args: string[]) {
-  if (!scriptData[name]) return log('error', 'No script with the name %s found!', name);
+  if (!scriptData[name])
+    return log('error', 'No script with the name %s found!', name);
   const hide = scriptData[name].hide;
+  await whenBuildEnds(name);
 
   log('info', 'script helper', 'Running script %s with args: %s', name, args);
-  const old = (await readFile(join(SCRIPTDIR, name))).toString();
-  const { imports, remaining } = transform(old);
-
-  const newName = join(SCRIPTDIR, name.substring(0, name.length - 2) + 'cts');
-  await writeFile(
-    newName,
-    imports + '/**/(async ()=>{\n' + remaining + '\n/**/})();'
-  );
 
   return new Promise((res) => {
-    const spawned = spawn(
-      runner,
-      [join(SCRIPTDIR, 'globals.js'), newName, ...args],
+    const spawned = fork(
+      join(SCRIPTDIR, 'globals.js'),
+      [join(SCRIPTDIR, name.substring(0, name.length - 3) + '.js'), ...args],
       {
         cwd: SCRIPTDIR,
         stdio: ['ipc'],
-        shell: true,
-        // shell: platform() === 'win32',
       }
     );
-    if (!hide) log(
-      'debug',
-      'command line',
-      '"%s" "%s" "%s" %s',
-      runner,
-      join(SCRIPTDIR, 'globals.js'),
-      join(SCRIPTDIR, name),
-      args.map((el) => JSON.stringify(el)).join(' ')
-    );
+    if (!hide)
+      log(
+        'debug',
+        'command line',
+        '"%s" "%s.js" "%s" %s',
+        runner,
+        join(SCRIPTDIR, 'globals.js'),
+        join(SCRIPTDIR, name.substring(0, name.length - 3)),
+        args.map((el) => JSON.stringify(el)).join(' ')
+      );
     processes[spawned.pid || 0] = spawned;
     spawned.stdout?.pipe(process.stdout);
     spawned.stderr?.pipe(process.stdout);
@@ -102,14 +96,15 @@ export async function runScript(name: string, ...args: string[]) {
     spawned.on('error', remove);
     spawned.on('exit', remove);
     spawned.on('message', (data) => {
-      if (!hide) log(
-        'debug',
-        'api',
-        'Message from pid: %d | file: %s | data: %s',
-        spawned.pid,
-        name,
-        JSON.stringify(data)
-      );
+      if (!hide)
+        log(
+          'debug',
+          'api',
+          'Message from pid: %d | file: %s | data: %s',
+          spawned.pid,
+          name,
+          JSON.stringify(data)
+        );
 
       if (typeof data !== 'object' || !data) return;
       if (!('pid' in data) || !('channel' in data)) return;
@@ -178,7 +173,8 @@ export function getProcs() {
   for (const pid in processes) {
     newProcs[pid] =
       processes[pid].spawnargs[2].split(sep).pop() || 'no process name found';
-    newProcs[pid] = newProcs[pid].substring(0, newProcs[pid].length - 3) + 'ts'; // remove the cts extension, as .cts is the "transpiled" version :3
+    newProcs[pid] =
+      newProcs[pid].substring(0, newProcs[pid].length - 3) + '.ts'; // remove the js extension, as .js is the transpiled version :3
   }
 
   return newProcs;

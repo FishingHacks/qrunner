@@ -76,6 +76,7 @@ import { randomUUID } from 'crypto';
 import { createServer } from 'http';
 import { format } from 'util';
 import { getInfo, ScriptInfo } from './extractScriptInfos';
+import { build } from './build';
 
 if (process.defaultApp) {
   if (process.argv.length >= 2)
@@ -509,6 +510,12 @@ watch(SCRIPTDIR, (type, filename) => {
     reloadShortcuts(filename);
     reloadSchedules(filename);
   });
+  if (
+    type === 'change' &&
+    filename.endsWith('.ts') &&
+    !filename.endsWith('.d.ts')
+  )
+    build(filename, filename.endsWith('.module.ts'));
 });
 
 // setup files
@@ -517,6 +524,11 @@ syncFiles().then(() => {
   reloadShortcuts();
   reloadSchedules();
 });
+readdir(SCRIPTDIR).then((f) =>
+  f
+    .filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts'))
+    .forEach((el) => build(el, el.endsWith('.module.ts')))
+);
 
 export function displayError(name: string, error: string) {
   show();
