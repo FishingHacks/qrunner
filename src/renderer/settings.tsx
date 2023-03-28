@@ -895,7 +895,7 @@ export default function Settings(props: DefaultViewProps) {
             .split('+')
             .map((el) => el.toLowerCase())
             .map((el) =>
-              ['CommandOrControl', 'CmdOrCtrl'].includes(el) ? 'cmd/ctrl' : el
+              ['commandorcontrol', 'cmdorctrl'].includes(el.toLowerCase()) ? 'cmd/ctrl' : el
             )
             .filter((el) => el.length > 0)}
         />
