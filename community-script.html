@@ -15,7 +15,7 @@
 
                 window.addEventListener('load', () => {
                     import(
-                        window.location.origin + '/scripts/' + script + '.js'
+                        window.location.origin + '/qrunner/scripts/' + script + '.js'
                     )
                         .then(({ s_id, s_name, s_gh, s_tw, s_yt }) => {
                             fetch(
@@ -120,20 +120,20 @@
                             )[0].textContent = 'qRunner | ' + s_name;
                             document.title = 'qRunner | ' + s_name;
                         })
-                        .catch(() => (window.location.pathname = '/'));
+                        .catch(() => (window.location.pathname = '/qrunner'));
                 });
             } catch {
-                window.location.pathname = '/';
+                window.location.pathname = '/qrunner';
             }
         </script>
     </head>
     <body>
         <nav>
-            <a href="/" class="navlink">Home</a>
-            <a href="/docs" class="navlink">Docs</a>
-            <a href="/#download" class="navlink">Download</a>
-            <a href="/community" class="navlink">Community Scripts</a>
-            <a href="/guide" class="navlink">Guide</a>
+            <a href="/qrunner/" class="navlink">Home</a>
+            <a href="/qrunner/docs" class="navlink">Docs</a>
+            <a href="/qrunner/#download" class="navlink">Download</a>
+            <a href="/qrunner/community" class="navlink">Community Scripts</a>
+            <a href="/qrunner/guide" class="navlink">Guide</a>
             <div style="flex-grow: 1"></div>
             <p
                 style="
