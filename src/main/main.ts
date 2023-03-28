@@ -4,7 +4,7 @@ import cron from 'node-cron';
 import path, { sep } from 'path';
 import { resolveHtmlPath } from './util';
 import chalk from 'chalk';
-import { spawn, spawnSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import {
   app,
   BrowserWindow,
@@ -107,18 +107,6 @@ function ensureFile(path: string, contents: string) {
   if (!existsSync(path)) writeFileSync(path, contents);
 }
 
-/**
- * Instructions on how to patch:
- * 1. Check that this issue is still unresolved, otherwise the newest tsx version should work: https://github.com/esbuild-kit/tsx/issues/201
- * 2. Copy https://github.com/esbuild-kit/tsx
- * 3. run pnpm i
- * 4. use the instructions from the above mentioned issue to patch your copy of tsx
- * 5. run pnpm build
- * 6. copy the path of cli.js in the now created dist folder
- * 7. Pase it here
- */
-const PATCHED_TSX_PATH = homedir() + '/js/tsx/dist/cli.js'; // note: put your own path here.
-
 let messages: string[] = [];
 
 export function log(
@@ -136,24 +124,6 @@ export function log(
     )}`.substring(0, 200) // to prevent huge, 40mb log files after a few hours
   );
 }
-
-export const runner = (() => {
-  // if (!spawnSync('tsx', ['-v']).error) return 'tsx'; // error: TSX doesn't work with IPC connections, see https://github.com/esbuild-kit/tsx/issues/201
-  if (
-    !spawnSync(PATCHED_TSX_PATH, ['-v'], { shell: platform() === 'win32' })
-      .error &&
-    PATCHED_TSX_PATH
-  )
-    return PATCHED_TSX_PATH;
-  if (!spawnSync('ts-node', ['-v'], { shell: platform() === 'win32' }).error)
-    return 'ts-node';
-  // todo: node & tsc
-
-  console.error(
-    '\x1b[31mError: You have to have either tsx or ts-node installed!\x1b[39m'
-  );
-  process.exit(1);
-})();
 
 export const QRunnerDirectory = join(homedir(), '.qrunner');
 ensureDir(QRunnerDirectory);

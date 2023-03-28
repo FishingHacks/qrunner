@@ -17,7 +17,6 @@ import {
   SCRIPTDIR,
   envFile,
   colorSchemeFile,
-  runner,
   configFile,
   log,
   scriptData,
@@ -62,8 +61,7 @@ export async function runScript(name: string, ...args: string[]) {
       log(
         'debug',
         'command line',
-        '"%s" "%s.js" "%s" %s',
-        runner,
+        'node "%s.js" "%s" %s',
         join(SCRIPTDIR, 'globals.js'),
         join(SCRIPTDIR, name.substring(0, name.length - 3)),
         args.map((el) => JSON.stringify(el)).join(' ')
