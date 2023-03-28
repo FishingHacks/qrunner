@@ -75,6 +75,7 @@ export interface File {
   shortcut?: string;
   schedule?: string;
   nextRun?: number;
+  compilationSuccessful: boolean;
 }
 
 export interface ArgOption<T extends string = string> {

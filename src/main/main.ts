@@ -497,10 +497,11 @@ readdir(SCRIPTDIR).then((f) =>
 );
 
 export function displayError(name: string, error: string) {
-  show();
-  try {
-    mainWindow?.webContents?.send('display-error', name, error);
-  } catch {}
+  show().then(() => {
+    try {
+      mainWindow?.webContents?.send('display-error', name, error);
+    } catch {}
+  })
 }
 async function syncBinDir() {
   const $scripts = await readdir(SCRIPTDIR);

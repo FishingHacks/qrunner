@@ -1,9 +1,10 @@
 import * as esbuild from 'esbuild';
 import { access, constants, readFile } from 'fs/promises';
 import { join } from 'path';
-import { log, SCRIPTDIR } from './main';
+import { displayError, log, SCRIPTDIR } from './main';
 
 let building: Record<string, (() => void)[]> = {};
+export const compilationSuccessStatus: Record<string, boolean> = {};
 
 export function isBuilding(file: string) {
   return building[file] !== undefined;
@@ -43,7 +44,7 @@ export async function build(file: string, cancelTransform?: boolean) {
 
     log('info', 'build', 'Building %s using esbuild!', file);
 
-    await esbuild.build({
+    const { errors } = await esbuild.build({
       stdin: {
         contents: newContent,
         resolveDir: SCRIPTDIR,
@@ -55,9 +56,28 @@ export async function build(file: string, cancelTransform?: boolean) {
       tsconfig: join(SCRIPTDIR, 'tsconfig.json'),
     });
 
-    log('info', 'build', 'Finished building %s!', file);
-  } catch (e) {
+    compilationSuccessStatus[file] = errors.length < 1;
+    if (errors.length < 1) log('info', 'build', 'Finished building %s!', file);
+    else {
+      log(
+        'error',
+        'build',
+        'Failed to build %s:\n%s',
+        file,
+        errors.map((el) => el.text).join('\n' + '-'.repeat(20) + '\n')
+      );
+      displayError(
+        'Error while compiling ' + file,
+        errors.map((el) => el.text).join('\n' + '-'.repeat(20) + '\n')
+      );
+    }
+  } catch (e: any) {
+    compilationSuccessStatus[file] = false;
     log('error', 'build', 'Failed to build %s:\n%s', file, e);
+    displayError(
+      'Error while compiling ' + file,
+      e?.stack || e?.message || e?.name || e?.toString() || '' + e
+    );
   }
   building[file].forEach((el) => el());
   delete building[file];

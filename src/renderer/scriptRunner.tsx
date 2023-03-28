@@ -101,7 +101,10 @@ export default function ScriptSearch(props: DefaultViewProps) {
   $runScript = () => {
     props.config.setSearch('');
     if (filteredFiles[selected]) {
-      if (!filteredFiles[selected].path.endsWith('.module.ts'))
+      if (
+        !filteredFiles[selected].path.endsWith('.module.ts') &&
+        filteredFiles[selected].compilationSuccessful
+      )
         runScript(filteredFiles[selected].path);
     } else if (
       search &&
@@ -348,13 +351,49 @@ export default function ScriptSearch(props: DefaultViewProps) {
                     key={el.path}
                     className={`script-entry ${selected === i && 'selected'}`}
                     onClick={
-                      el.path.endsWith('.module.ts')
+                      el.path.endsWith('.module.ts') || !el.compilationSuccessful
                         ? undefined
                         : () => runScript(el.path)
                     }
                     onMouseOver={() => (selected === i ? null : setSelected(i))}
                   >
-                    <div className="script-name">{el.name || el.path}</div>
+                    <div
+                      className="script-name"
+                      style={
+                        !el.compilationSuccessful
+                          ? {
+                              display: 'flex',
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              gap: '.25rem',
+                            }
+                          : undefined
+                      }
+                    >
+                      {!el.compilationSuccessful && (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16px"
+                          height="16px"
+                          viewBox="0 0 24 24"
+                          strokeWidth="2"
+                          stroke="#dc2626"
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path
+                            stroke="none"
+                            d="M0 0h24v24H0z"
+                            fill="none"
+                          ></path>
+                          <path d="M10.24 3.957l-8.422 14.06a1.989 1.989 0 0 0 1.7 2.983h16.845a1.989 1.989 0 0 0 1.7 -2.983l-8.423 -14.06a1.989 1.989 0 0 0 -3.4 0z"></path>
+                          <path d="M12 9v4"></path>
+                          <path d="M12 17h.01"></path>
+                        </svg>
+                      )}
+                      {el.name || el.path}
+                    </div>
                     <div className="script-description">{el.description}</div>
                   </div>
                 ))}
@@ -386,6 +425,9 @@ export default function ScriptSearch(props: DefaultViewProps) {
             {!filteredFiles[selected]?.path.endsWith('.module.ts') &&
               filteredFiles[selected] && (
                 <>
+                  {!filteredFiles[selected].compilationSuccessful && (
+                    <p className="d-error">Compilation failed</p>
+                  )}
                   {filteredFiles[selected].name && (
                     <p className="d-name">
                       <span className="name">Name</span>:{' '}

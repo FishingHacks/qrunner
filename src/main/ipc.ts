@@ -30,7 +30,7 @@ import { dialog } from 'electron';
 import { validate } from 'node-cron';
 import { parseExpression } from 'cron-parser';
 import { platform } from 'os';
-import { whenBuildEnds } from './build';
+import { compilationSuccessStatus, whenBuildEnds } from './build';
 
 export async function createScript(name: string) {
   log('info', 'script helper', 'Creating script %s', name);
@@ -239,15 +239,17 @@ export async function listScripts(): Promise<File[]> {
         !script.schedule || !validate(script.schedule)
           ? undefined
           : parseExpression(script.schedule).next().toDate().getTime(),
+      compilationSuccessful: compilationSuccessStatus[f],
     })),
     ...(await readdir(SCRIPTDIR))
       .filter((el) => el.endsWith('.module.ts'))
-      .map((el) => ({
+      .map<File>((el) => ({
         path: el,
         name: el,
         description: '',
         author: '',
         uses: [],
+        compilationSuccessful: compilationSuccessStatus[el],
       })),
   ].sort((a, b) => (a.name || a.path).localeCompare(b.name || b.path));
 }
