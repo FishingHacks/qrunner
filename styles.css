@@ -139,12 +139,14 @@ kbd {
     color: var(--color-gray-inverted);
 }
 
-.downloadButton > div {
+.downloadButton > a {
     cursor: pointer;
     display: flex;
     align-items: center;
     border-radius: 15px;
     overflow: hidden;
+    text-decoration: none;
+    color: var(--color-text);
 }
 
 .downloadButton svg:first-child {
