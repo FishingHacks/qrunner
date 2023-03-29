@@ -173,7 +173,7 @@ kbd {
     margin-left: -1.375rem;
 }
 
-.downloadButton > div:hover .part1 .overlay {
+.downloadButton > a:hover .part1 .overlay {
     background-color: #0003;
 }
 
