@@ -16,7 +16,7 @@ export function whenBuildEnds(file: string): Promise<void> {
 }
 
 export async function build(file: string, cancelTransform?: boolean) {
-  const { build } = await import(join(SCRIPTDIR, 'node_modules', 'esbuild'));
+  const { build } = eval('require')(join(SCRIPTDIR, 'node_modules', 'esbuild', 'lib', 'main'));
 
   if (isBuilding(file)) return;
   cancelTransform ||= false;
