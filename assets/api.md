@@ -581,11 +581,11 @@ function getEnvFile(): string;
 
 ---
 
-## getHomePath
+## home
 
 ```typescript
 ///file: typedef.d.ts
-function getHomePath(): string;
+function home(...args: string[]): string;
 ```
 
 > Returns the user's home folder path
@@ -773,11 +773,11 @@ function cd(path: string): void;
 
 ---
 
-## getLogDir
+## logDir
 
 ```typescript
 ///file: typedef.d.ts
-function getLogDir(): string;
+function logDir(...paths: string[]): string;
 ```
 
 > Returns the logging directory
@@ -799,11 +799,11 @@ function getLogFile(): string;
 
 ---
 
-## getPackageDir
+## scriptDir
 
 ```typescript
 ///file: typedef.d.ts
-function getPackageDir(): string;
+function scriptDir(...paths: string[]): string;
 ```
 
 > returns the package direcotry
@@ -1194,6 +1194,37 @@ function tmp(content: string, name?: string, extension?: string): string;
 
 ---
 
+## createPathFunction
+
+```typescript
+///file: typedef.d.ts
+function createPathFunction(path: string|(()=>string)): (...paths: string[]) => string;
+```
+
+> Creates a function that lets you get a path. Example:
+>
+```typescript
+///file: example.ts
+const qrunnerdir = createPathFunction(os.homedir() + '.qrunner');
+```
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
+## qrunnerDir
+
+```typescript
+///file: typedef.d.ts
+function qrunnerDir(...paths: string[]) => string;
+```
+
+> Get the qrunner directory path
+>
+> **Supports**: Linux Windows MacOS
+
+---
+
 ## API Namespace
 
 > All above-mentioned functions are available in the API namespace. This means, you can call `widget(...)` and `API.widget(...)` and it will do the exact same.
@@ -1217,7 +1248,7 @@ import { fileExplorer } from './fileExplorer.module';
 (async function () {
   // ...
 
-  const file = await fileExplorer(getHomePath());
+  const file = await fileExplorer(home());
 
   // ...
 })();

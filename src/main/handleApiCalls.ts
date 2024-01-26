@@ -1,4 +1,4 @@
-import { clipboard, nativeImage, shell } from 'electron';
+import { clipboard, nativeImage, Notification, shell } from 'electron';
 import { readFile, writeFile } from 'fs/promises';
 import {
   arg,
@@ -44,7 +44,7 @@ export const channels = {
   START_DRAG: 22,
   RUN_IN_EDITOR: 23,
   TEXTAREA: 24,
-  KILL: 25,
+  SEND_NOTIFICATION: 25,
 };
 
 export default function handle(
@@ -197,5 +197,12 @@ export default function handle(
   } else if (channel === channels.TEXTAREA) {
     if (!data.name || typeof data.name !== 'string') return;
     getMainWindow()?.webContents?.send('textarea', data.name.toString());
+  } else if (channel === channels.SEND_NOTIFICATION) {
+    if (!data.title || typeof data.title !== 'string') return;
+    if (data.description && typeof data.description !== 'string') return;
+    const n = new Notification({
+      body: data.description,
+      title: data.title,
+    }).show();
   }
 }

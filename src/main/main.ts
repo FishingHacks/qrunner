@@ -109,14 +109,18 @@ function ensureFile(path: string, contents: string) {
 
 let messages: string[] = [];
 
-export function log(
+let is_open = false;
+
+export async function log(
   level: 'warn' | 'debug' | 'info' | 'error',
   module: string,
   message: string,
   ...args: any[]
 ) {
   const toPrint = chalk.cyan(module) + ' | ' + format(message, ...args);
-  console[level](toPrint);
+
+  if (is_open) console[level](toPrint);
+
   messages.push(
     `[${new Date().toLocaleString()}] [${level}]: ${module} | ${format(
       message,
@@ -374,7 +378,7 @@ async function syncFiles() {
 
 let registeredShortcuts: string[] = [];
 let isRegisteringShortcuts = false;
-function reloadShortcuts(filename?: string) {
+async function reloadShortcuts(filename?: string) {
   if (isRegisteringShortcuts) return;
   isRegisteringShortcuts = true;
 
@@ -383,25 +387,37 @@ function reloadShortcuts(filename?: string) {
 
   for (const [f, s] of Object.entries(scriptData)) {
     if (!s.shortcut) continue;
-    if (globalShortcut.isRegistered(s.shortcut))
-      log(
-        'error',
-        'script-helper',
-        '%s tries to register shortcut "%s", but it is already registered!',
-        f,
-        s.shortcut
-      );
-    else {
-      globalShortcut.register(s.shortcut, () => runScript(f));
-      registeredShortcuts.push(s.shortcut);
-      if (!filename || f === filename)
+    try {
+      if (globalShortcut.isRegistered(s.shortcut))
         log(
-          'info',
+          'error',
           'script-helper',
-          'registered shortcut "%s" for %s',
-          s.shortcut,
-          f
+          '%s tries to register shortcut "%s", but it is already registered!',
+          f,
+          s.shortcut
         );
+      else {
+        if (!globalShortcut.register(s.shortcut, () => runScript(f))) {
+          log(
+            'error',
+            'script-helper',
+            'Failed to register shotcut %s',
+            s.shortcut
+          );
+        } else {
+          registeredShortcuts.push(s.shortcut);
+          if (!filename || f === filename)
+            log(
+              'info',
+              'script-helper',
+              'registered shortcut "%s" for %s',
+              s.shortcut,
+              f
+            );
+        }
+      }
+    } catch (e) {
+      log('error', 'script-helper', '%s', e);
     }
   }
 
@@ -734,7 +750,6 @@ export let getAssetPath = (...f: string[]) => '';
 ipcMain.handle('devtools', (ev, obj) => createDevtools(obj));
 ipcMain.handle('start-drag', async (ev, file: string) => {
   file = file.startsWith('~') ? join(homedir(), file.substring(1)) : file;
-  console.log(file);
   mainWindow?.webContents?.startDrag({
     file,
     icon:
@@ -796,7 +811,7 @@ app
         .filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts'))
         .forEach((el) => build(el, el.endsWith('.module.ts')))
     );
-  
+
     const RESOURCES_PATH = app.isPackaged
       ? path.join(process.resourcesPath, 'assets')
       : path.join(__dirname, '../../assets');

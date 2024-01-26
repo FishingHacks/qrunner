@@ -68,7 +68,17 @@ const channels = {
     START_DRAG: 22,
     RUN_IN_EDITOR: 23,
     TEXTAREA: 24,
+    SEND_NOTIFICATION: 25,
 };
+
+function createPathFunction(path) {
+    let cache = '';
+    return (...paths) => {
+        if (typeof path === 'string') cache = path;
+        else if (typeof path === 'function' && !cache) cache = path();
+        return join(cache, ...paths);
+    };
+}
 
 function spawnPromise(command, args) {
     return new Promise((res, rej) => {
@@ -103,15 +113,15 @@ async function $getPackageManager() {
 
 const promises = [];
 
-const packageDir = process.cwd();
+const scriptDir = process.cwd();
 const scriptName = ((str) => str.substring(0, str.length - 4))(
     process.argv[2].split(sep).pop()
 );
 
-const envFile = join(packageDir, '../' + scriptName + '.env.json');
-const dbFile = join(packageDir, '../' + scriptName + '.db.json');
-const logDir = join(packageDir, '../log');
-const tmpDir = join(packageDir, '../tmp');
+const envFile = join(scriptDir, '../' + scriptName + '.env.json');
+const dbFile = join(scriptDir, '../' + scriptName + '.db.json');
+const logDir = join(scriptDir, '../log');
+const tmpDir = join(scriptDir, '../tmp');
 
 const noop = () => {};
 
@@ -126,12 +136,7 @@ promises.push(
 );
 
 const today = new Date();
-const logFile = join(
-    logDir,
-    \`log-\${process.argv[2]
-        .split(sep)
-        .pop()}.txt\`
-);
+const logFile = join(logDir, \`log-\${process.argv[2].split(sep).pop()}.txt\`);
 let packageManager = '';
 
 function send(channel, data) {
@@ -162,16 +167,9 @@ function open(path) {
     return send(channels.OPEN, { path });
 }
 
-function notify(title, name) {
+function notify(title, description) {
     if (!title) throw new Error('No title specified');
-    const p = os.get().platform();
-    if (p === 'linux') {
-        $spawn('notify-send', [title, name], {
-            detached: true,
-            shell: platform() === 'win32',
-            cwd: fs.getCwd(),
-        });
-    } else throw new Error('notify is only supported on linux');
+    send(channels.SEND_NOTIFICATION, { title, description });
 }
 
 const clipboard = {
@@ -400,7 +398,7 @@ function cd(path) {
 async function npm(path) {
     const oldcwd = fs.getCwd();
 
-    cd(packageDir);
+    cd(scriptDir);
     try {
         await promiseFs
             .get()
@@ -492,9 +490,7 @@ function getEnvFile() {
     return envFile;
 }
 
-function getHomePath() {
-    return os.get().homedir();
-}
+const home = createPathFunction(() => os.get().homedir());
 
 function logToFile(level, ...args) {
     const message = util.get().format(...args);
@@ -557,17 +553,13 @@ function isLinux() {
     return os.get().platform() === 'linux';
 }
 
-function getLogDir() {
-    return logDir;
-}
+const _logDir = createPathFunction(logDir)
 
 function getLogFile() {
     return logFile;
 }
 
-function getPackageDir() {
-    return packageDir;
-}
+const _scriptDir = createPathFunction(scriptDir);
 
 function writeToSelection(string) {
     return send(channels.WRITE, { string });
@@ -894,7 +886,7 @@ expose('env', env);
 expose('sleep', sleep);
 expose('sleepSync', sleepSync);
 expose('timeToMs', timeToMs);
-expose('getHomePath', getHomePath);
+expose('home', home);
 expose('logToFile', logToFile);
 expose('logToFileSync', logToFileSync);
 expose('clearAllIntervals', clearAllIntervals);
@@ -907,9 +899,9 @@ expose('send', send);
 expose('sendWithResponse', sendWithResponse);
 expose('cd', cd);
 expose('getEnvFile', getEnvFile);
-expose('getLogDir', getLogDir);
+expose('logDir', _logDir);
 expose('getLogFile', getLogFile);
-expose('getPackageDir', getPackageDir);
+expose('scriptDir', _scriptDir);
 expose('writeToSelection', writeToSelection);
 expose('arg', arg);
 expose('hide', hide);
@@ -936,6 +928,8 @@ expose('closeWidget', closeWidget);
 expose('startDrag', startDrag);
 expose('textarea', textarea);
 expose('tmp', tmp);
+expose('createPathFunction', createPathFunction);
+expose('qrunnerDir', createPathFunction(join(scriptDir, '..')));
 
 const oldConsole = {
     log: console.log,
@@ -943,32 +937,32 @@ const oldConsole = {
     info: console.info,
     warn: console.warn,
     debug: console.debug,
-}
+};
 
 console.log = function log(...args) {
     oldConsole.log(...args);
     logToFileSync('info', ...args);
-}
+};
 
 console.error = function error(...args) {
     oldConsole.log(...args);
     logToFileSync('error', ...args);
-}
+};
 
 console.info = function info(...args) {
     oldConsole.log(...args);
     logToFileSync('info', ...args);
-}
+};
 
 console.warn = function warn(...args) {
     oldConsole.log(...args);
     logToFileSync('warn', ...args);
-}
+};
 
 console.debug = function debug(...args) {
     oldConsole.log(...args);
     logToFileSync('info', ...args);
-}
+};
 
 process.on('uncaughtException', (err) => {
     console.error('Unhandled Exeption!');

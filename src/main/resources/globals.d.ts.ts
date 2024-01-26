@@ -66,7 +66,7 @@ declare function sleep(time: TimeConfig): Promise<void>;
 declare function sleepSync(time: TimeConfig): void;
 declare function timeToMs(time: TimeConfig): number;
 declare function getEnvFile(): string;
-declare function getHomePath(): string;
+declare function home(...paths: string[]): string;
 declare function logToFile(
     level: 'warn' | 'error' | 'info',
     message: string,
@@ -109,9 +109,9 @@ declare enum Channel {
 declare function send(channel: Channel, data: any): Promise<void>;
 declare function sendWithResponse(channel: Channel, data: any): Promise<any>;
 declare function cd(path: string): void;
-declare function getLogDir(): string;
+declare function logDir(...paths: string[]): string;
 declare function getLogFile(): string;
-declare function getPackageDir(): string;
+declare function scriptDir(...paths: string[]): string;
 declare function writeToSelection(text: string): Promise<void>;
 declare interface ArgOption {
     name: string;
@@ -178,6 +178,8 @@ declare function tmp(
     name?: string,
     extension?: string
 ): string;
+declare function createPathFunction(path: string): (...paths: string[]) => string;
+declare function qrunnerDir(...paths: string[]): string;
 declare namespace API {
     function open(path: string): Promise<void>;
     function notify(title: string, body?: string): void;
@@ -197,7 +199,7 @@ declare namespace API {
     function sleepSync(time: TimeConfig): void;
     function timeToMs(time: TimeConfig): number;
     function getEnvFile(): string;
-    function getHomePath(): string;
+    function home(...paths: string[]): string;
     function logToFile(
         level: 'warn' | 'error' | 'info',
         message: string,
@@ -217,9 +219,9 @@ declare namespace API {
     function send(channel: Channel, data: any): Promise<void>;
     function sendWithResponse(channel: Channel, data: any): Promise<any>;
     function cd(path: string): void;
-    function getLogDir(): string;
+    function logDir(...paths: string[]): string;
     function getLogFile(): string;
-    function getPackageDir(): string;
+    function scriptDir(...paths: string[]): string;
     function writeToSelection(text: string): Promise<void>;
     interface ArgOption {
         name: string;
@@ -272,4 +274,6 @@ declare namespace API {
     function startDrag(file: string): void;
     function textarea(name: string): Promise<string>;
     function tmp(content: string, name?: string, extension?: string): string;
+    function createPathFunction(path: string): (...paths: string[]) => string;
+    function qrunnerDir(...paths: string[]): string;
 }`;

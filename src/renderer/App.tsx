@@ -400,7 +400,7 @@ const App = () => {
       !props.config.disableTabs ||
       (uTabData.enabled && uTabData.names.length > 0)
     ) {
-      remMinus++;
+      remMinus += 1.25;
       pxMinus += 7;
     }
     if (!props.config.disableBar) pxMinus += 22;
@@ -536,7 +536,7 @@ const App = () => {
             className="link"
             onClick={API.hideWindow}
           >
-            <KbdList keys={[ 'f1' ]} />: Get Help
+            <KbdList keys={['f1']} />: Get Help
           </a>
         </div>
       </div>
